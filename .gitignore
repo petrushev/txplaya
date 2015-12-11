@@ -55,3 +55,11 @@ docs/_build/
 
 # PyBuilder
 target/
+
+*/l10n/*.qm
+
+txplayagui/ui/resource_rc.py
+txplayagui/ui/main.py
+
+.*project
+.settings

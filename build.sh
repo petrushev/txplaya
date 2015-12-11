@@ -1,0 +1,5 @@
+echo 'Building ui files...'
+pyrcc5 -o txplayagui/ui/resource_rc.py txplayagui/ui/resource.qrc
+pyuic5 -o txplayagui/ui/main.py txplayagui/ui/main.ui
+pylupdate5 -verbose txplayagui/txplayagui.pro
+lrelease -verbose txplayagui/txplayagui.pro
