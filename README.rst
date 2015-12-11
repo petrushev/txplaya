@@ -7,11 +7,11 @@ Web based audio player build on Twisted
 Requirements
 ------------
 
-Twisted
-requests
-PyQt5
-werkzeug
-mutagen
+- Twisted
+- requests
+- PyQt5
+- werkzeug
+- mutagen
 
 
 Running
