@@ -17,6 +17,10 @@ Requirements
 Running
 -------
 
+Build resource, ui and translation files: ::
+
+    ./build.sh
+
 Start server with: ::
 
     twistd -ny playaservice.py
