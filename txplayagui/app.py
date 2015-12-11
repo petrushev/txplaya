@@ -1,6 +1,6 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QStyledItemDelegate
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
@@ -15,21 +15,6 @@ if not _success:
     translator = None
 
 
-class PlaylistViewItemDelegate(QStyledItemDelegate):
-     
-    def paint(self, painter, option, index):
-        if index.model().isPlaying(index):
-            #data = index.data()
-            #painter.save()
-            #self.initStyleOption(option, index)
-            #painter.restore()
-            
-            QStyledItemDelegate.paint(self, painter, option, index)
-
-        else:    
-            QStyledItemDelegate.paint(self, painter, option, index)
-
-
 class MainWindow(Ui_MainWindow, QMainWindow):
 
     def __init__(self):
@@ -41,7 +26,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.playlistModel = PlaylistModel()
         self.playlistTable.setModel(self.playlistModel)
-        self.playlistTable.setItemDelegate(PlaylistViewItemDelegate(self.playlistTable))
 
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlistTable.doubleClicked.connect(self.onPlaylistDoubleClick)
@@ -85,7 +69,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     filepath = url.toLocalFile()
                     track = Track(filepath)
 
-                    #self.playlistModel.insertTrack(rowTarget, track)
                     from txplayagui.client import insert
                     response = insert(track, rowTarget)
                     response.finished.connect(self.getCallbackPlaylistUpdated(response))
