@@ -4,6 +4,7 @@ from math import ceil
 import gc
 from uuid import uuid4
 from operator import itemgetter
+import json
 
 from twisted.internet import reactor
 from twisted.internet.task import deferLater
@@ -28,7 +29,8 @@ class PlaylistFinished(PlaylistError): pass
 
 class ListenerRegistry(object):
 
-    _reg = {}
+    def __init__(self):
+        self._reg = {}
 
     def add(self, listener):
         self._reg[id(listener)] = listener
@@ -240,23 +242,44 @@ class MainController(object):
         self.player = Player()
         self.playlist = Playlist()
         self.listenerRegistry = ListenerRegistry()
+        self.infoListenerRegistry = ListenerRegistry()
         self.library = Library(reactor)
 
         self.player.onPush = self.onBufferReceived
         self.player.onTrackFinished = self.onTrackFinished
 
+    def announce(self, data):
+        buf = json.dumps(data) + '\n'
+        for listener in self.infoListenerRegistry.iterListeners():
+            _d = deferLater(reactor, 0, listener.onPush, buf)
+
     def onTrackFinished(self):
+        event = {'event': 'TrackFinished',
+                 'data': {'position': self.playlist.currentPosition,
+                          'track': self.playlist.currentTrack.meta}}
+        self.announce(event)
+
         nextPosition = self.playlist.stepNext()
 
         if nextPosition is None:
             self.onPlaylistFinished()
             return
 
+        event = {'event': 'TrackStarted',
+                 'data': {'position': self.playlist.currentPosition,
+                          'track': self.playlist.currentTrack.meta}}
+        self.announce(event)
+
         self.player.feed(self.playlist.currentTrack)
         self.player.start()
 
     def onPlaylistFinished(self):
         log.msg('Playlist finished')
+
+        event = {'event': 'PlaylistFinished',
+                 'data': {}}
+        self.announce(event)
+
         self.player.history = deque()
         self.listenerRegistry.onPlaylistFinished()
 

@@ -36,5 +36,7 @@ url_map = Map([
     Rule('/library', defaults={'action': 'getLibrary'},
          endpoint=controllers.Library),
     Rule('/library/rescan', defaults={'action': 'rescan'},
-         endpoint=controllers.Library)
+         endpoint=controllers.Library),
+    Rule('/infostream',
+         endpoint=controllers.InfoStream)
 ])

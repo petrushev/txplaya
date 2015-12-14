@@ -6,16 +6,14 @@ from werkzeug.urls import url_encode, url_quote
 BASE_URL = 'http://localhost:8070'
 
 
-class QRequest(QObject):
+class QBaseRequest(QObject):
 
     manager = QNetworkAccessManager()
-    finished = pyqtSignal()
 
     def __init__(self, url, params=None, parent=None):
         QObject.__init__(self, parent=parent)
 
         self.headers = {}
-
         self.params = params
 
         if params is not None:
@@ -24,10 +22,17 @@ class QRequest(QObject):
 
         self.request = QNetworkRequest(self.qUrl)
 
+    def close(self):
+        self.response.close()
+
+
+class QRequest(QBaseRequest):
+
+    finished = pyqtSignal()
+
     def get(self):
         self.response = self.manager.get(self.request)
         self.response.finished.connect(self._onFinished)
-        
 
     @pyqtSlot()
     def _onFinished(self):
@@ -36,6 +41,26 @@ class QRequest(QObject):
 
         self.finished.emit()
         self.response.deleteLater()
+
+
+class QStreamRequest(QBaseRequest):
+
+    lineReceived = pyqtSignal(str)
+
+    def __init__(self, url, params=None, parent=None):
+        QBaseRequest.__init__(self, url, params, parent)
+        self._buf = ''
+
+    def get(self):
+        self.response = self.manager.get(self.request)
+        self.response.readyRead.connect(self._onReadyRead)
+
+    def _onReadyRead(self):
+        tmp = self.response.readAll().data()
+        self._buf = self._buf + tmp
+        while '\n' in self._buf:
+            line, self._buf = self._buf.split('\n', 1)
+            self.lineReceived.emit(line)
 
 
 def _requestGet(url):
@@ -99,3 +124,9 @@ def libraryInsert(hashes, position=None):
     hashes_ = ','.join(hashes)
     url = url + hashes_
     return _requestGet(url)
+
+def infostream():
+    url = BASE_URL + '/infostream'
+    rq = QStreamRequest(url)
+    rq.get()
+    return rq

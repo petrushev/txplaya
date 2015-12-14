@@ -7,6 +7,7 @@ from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
 from txplayagui.library import LibraryModel
 from txplayagui.library import unwrapMime
+from txplayagui.infostream import QInfoStream
 
 # load translations
 locale = QLocale.system().name()
@@ -20,6 +21,8 @@ if not _success:
 class MainWindow(Ui_MainWindow, QMainWindow):
 
     def __init__(self):
+        from txplayagui.client import current
+
         QMainWindow.__init__(self)
         Ui_MainWindow.setupUi(self, self)
 
@@ -46,6 +49,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.fetchPlaylist()
         self.fetchLibrary()
+        currentResponse = current()
+        currentResponse.finished.connect(self.getCallbackCurrentFetched(currentResponse))
+
+        self.infoStream = QInfoStream()
+        self.infoStream.trackStarted.connect(self.onTrackStarted)
+        self.infoStream.playlistFinished.connect(self.onPlaylistFinished)
 
     def fetchPlaylist(self):
         from txplayagui.client import getPlaylist
@@ -271,3 +280,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         from txplayagui.client import libraryInsert
         response = libraryInsert(hashes)
         response.finished.connect(self.getCallbackPlaylistUpdated(response))
+
+    @pyqtSlot(object)
+    def onTrackStarted(self, trackData):
+        trackname = trackData['track']['trackname']
+        self.playingLabel.setText(trackname)
+
+    @pyqtSlot()
+    def onPlaylistFinished(self):
+        self.playingLabel.setText('not playing')

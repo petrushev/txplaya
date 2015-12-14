@@ -28,6 +28,17 @@ class BaseController(object):
         self.request.finish()
 
 
+class BaseStream(BaseController):
+
+    def __init__(self, request):
+        BaseController.__init__(self, request)
+
+        self.request.connectionLost = self.onConnectionLost
+
+    def onPush(self, buf):
+        self.write(buf)
+
+
 class PlaylistManager(BaseController):
 
     def __init__(self, request, action, filepath='', position=None, start=None, end=None,
@@ -159,14 +170,12 @@ class Player(BaseController):
         return {'msg': msg}
 
 
-class Stream(BaseController):
+class Stream(BaseStream):
 
     def __init__(self, request):
-        BaseController.__init__(self, request)
+        BaseStream.__init__(self, request)
 
         self.request.setHeader('Content-Type', 'audio/mp3')
-        self.request.connectionLost = self.onConnectionLost
-
         self.mainController.listenerRegistry.add(self)
 
         # push history to it
@@ -175,9 +184,6 @@ class Stream(BaseController):
 
     def onConnectionLost(self, reason):
         self.mainController.listenerRegistry.remove(self)
-
-    def onPush(self, buf):
-        self.write(buf)
 
 
 class Library(BaseController):
@@ -217,3 +223,15 @@ class Library(BaseController):
 
     def getLibrary(self):
         return {'library': self.mainController.library.data}
+
+
+class InfoStream(BaseStream):
+
+    def __init__(self, request):
+        BaseStream.__init__(self, request)
+
+        self.request.setHeader('Content-Type', 'text/plain')
+        self.mainController.infoListenerRegistry.add(self)
+
+    def onConnectionLost(self, reason):
+        self.mainController.infoListenerRegistry.remove(self)
