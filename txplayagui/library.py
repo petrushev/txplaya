@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
 from txplayagui.utilities import mimeWrapJson, unwrapMime
 
@@ -59,12 +59,17 @@ class AlbumItem(LibraryItem):
 
 class TrackItem(LibraryItem):
 
-    def data(self):
+    def _parseData(self):
         if len(self._data) == 4:
             disc_number, tracknumber, trackname, artist = self._data
         else:
             disc_number, tracknumber, trackname = self._data
-            artist = None
+            artist = ''
+
+        return disc_number, tracknumber, trackname, artist
+
+    def data(self):
+        disc_number, tracknumber, trackname, artist = self._parseData()
         display = ''
         if disc_number:
             display = '#%d - ' % disc_number
@@ -72,17 +77,13 @@ class TrackItem(LibraryItem):
             display = display + '%d. ' % tracknumber
 
         display = display + trackname
-        if artist is not None:
+        if artist != '':
             display = display + ' - %s' % artist
 
         return display
 
     def mimeData(self):
-        if len(self._data) == 4:
-            disc_number, tracknumber, trackname, artist = self._data
-        else:
-            disc_number, tracknumber, trackname = self._data
-            artist = None
+        disc_number, tracknumber, trackname, artist = self._parseData()
 
         res = unwrapMime(self._parent.mimeData())
         res.update({'trackname': trackname,
@@ -93,14 +94,21 @@ class TrackItem(LibraryItem):
                     'hash': self.hash})
         return mimeWrapJson(res)
 
+    def match(self, query):
+        meta = unwrapMime(self.mimeData())
+        qText = ' '.join([meta['artist'], meta['album'], meta['albumartist'], meta['trackname']])
+        return query in qText.lower()
+
 
 class LibraryModel(QAbstractItemModel):
-    
-    _artists = {}
-    
+
+    toggleRow = pyqtSignal(int, QModelIndex, bool)
+
     def __init__(self, *args, **kwargs):
         QAbstractItemModel.__init__(self, *args, **kwargs)
-    
+        self._rootIndex = QModelIndex()
+        self._artists = {}
+
     def columnCount(self, parent=QModelIndex()):
         return 1
 
@@ -136,7 +144,7 @@ class LibraryModel(QAbstractItemModel):
         parentItem = item.parentItem()
 
         if parentItem is None:
-            return QModelIndex()
+            return self._rootIndex
 
         return self.createIndex(parentItem.row(), 0, parentItem)
 
@@ -153,7 +161,10 @@ class LibraryModel(QAbstractItemModel):
 
     def loadData(self, libraryData):
         self.beginResetModel()
-        
+
+        self._artists.clear()
+
+        # fill new
         for hash_, meta in libraryData.items():
 
             albumartist = meta['albumartist']
@@ -176,7 +187,7 @@ class LibraryModel(QAbstractItemModel):
                 albumItem = AlbumItem(album)
                 albumItem._parent = artistItem
                 artistItem._children[album] = albumItem
-             
+
             if track not in albumItem._children:
                 trackItem = TrackItem(track)
                 trackItem.hash = hash_
@@ -192,3 +203,36 @@ class LibraryModel(QAbstractItemModel):
             raise TypeError, 'Suplied index does not point to AlbumItem'
 
         return item.albumHashes()
+
+    def filter(self, query):
+        filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
+                    for artistKey, artistItem in self._artists.items()
+                    for albumKey, albumItem in artistItem._children.items()
+                    for trackItem in albumItem._children.values())
+
+        shownArtistKeys, shownAlbumKeys = set(), set()
+
+        for artistKey, albumKey, albumItem, trackRow, isMatch in filtered:
+            parentIndex = self.createIndex(albumItem.row(), 0, albumItem)
+            self.toggleRow.emit(trackRow, parentIndex, isMatch)
+
+            if isMatch:
+                shownArtistKeys.add(artistKey)
+                shownAlbumKeys.add(albumKey)
+        del parentIndex
+
+        for artistKey, artistItem in self._artists.items():
+            if artistKey not in shownArtistKeys:
+                # hide artist row
+                self.toggleRow.emit(artistItem.row(), self._rootIndex, False)
+
+            else:
+                # show artist, filter albums
+                self.toggleRow.emit(artistItem.row(), self._rootIndex, True)
+                for albumKey, albumItem in artistItem._children.items():
+                    parentIndex = self.createIndex(artistItem.row(), 0, artistItem)
+
+                    if albumKey in shownAlbumKeys:
+                        self.toggleRow.emit(albumItem.row(), parentIndex, True)
+                    else:
+                        self.toggleRow.emit(albumItem.row(), parentIndex, False)

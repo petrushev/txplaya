@@ -44,6 +44,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.rescanLibraryButton.clicked.connect(self.rescanLibraryClicked)
 
         self.libraryModel = LibraryModel()
+        self.libraryModel.toggleRow.connect(self.onToggleRow)
         self.libraryTreeView.setModel(self.libraryModel)
         self.libraryTreeView.doubleClicked.connect(self.onLibraryDoubleClick)
 
@@ -289,3 +290,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot()
     def onPlaylistFinished(self):
         self.playingLabel.setText('not playing')
+
+    @pyqtSlot(int, QModelIndex, bool)
+    def onToggleRow(self, row, parentIndex, isShown):
+        self.libraryTreeView.setRowHidden(row, parentIndex, not isShown)
