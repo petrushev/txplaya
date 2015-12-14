@@ -13,8 +13,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="297"/>
+        <location filename="../ui/main.ui" line="325"/>
         <source>Rescan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main.ui" line="278"/>
+        <source>Search media library</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

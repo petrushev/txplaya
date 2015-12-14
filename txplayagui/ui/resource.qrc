@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>img/clear_text.svg</file>
     <file>img/library.svg</file>
     <file>img/stop.svg</file>
     <file>img/pause.svg</file>

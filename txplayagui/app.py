@@ -57,6 +57,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playlistFinished.connect(self.onPlaylistFinished)
 
+        self.queryLibSearchBox.textChanged.connect(self.onLibraryQueryChanged)
+        self.clearLibSearchButton.clicked.connect(self.onLibraryQueryClear)
+
     def fetchPlaylist(self):
         from txplayagui.client import getPlaylist
         response = getPlaylist()
@@ -294,3 +297,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(int, QModelIndex, bool)
     def onToggleRow(self, row, parentIndex, isShown):
         self.libraryTreeView.setRowHidden(row, parentIndex, not isShown)
+
+    @pyqtSlot(unicode)
+    def onLibraryQueryChanged(self, query):
+        if len(query) > 2 or query == '':
+            self._filterLibrary(query.lower())
+
+    @pyqtSlot()
+    def onLibraryQueryClear(self):
+        return self._filterLibrary('')
+
+    def _filterLibrary(self, query):
+        self.libraryModel.filter(query)

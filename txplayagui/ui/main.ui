@@ -271,6 +271,34 @@
    <widget class="QWidget" name="libraryDockContent">
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QLineEdit" name="queryLibSearchBox">
+         <property name="placeholderText">
+          <string>Search media library</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="clearLibSearchButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="icon">
+          <iconset resource="resource.qrc">
+           <normaloff>:/icons/img/clear_text.svg</normaloff>:/icons/img/clear_text.svg</iconset>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
       <widget class="QTreeView" name="libraryTreeView">
        <property name="minimumSize">
         <size>
