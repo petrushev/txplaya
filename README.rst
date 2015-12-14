@@ -23,7 +23,7 @@ Build resource, ui and translation files: ::
 
 Start server with: ::
 
-    twistd -ny playaservice.py
+    TXPLAYA_LIBPATH="/path/to/your/music" twistd -ny playaservice.py
 
 Start client with: ::
 
