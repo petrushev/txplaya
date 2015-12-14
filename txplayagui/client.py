@@ -8,9 +8,8 @@ BASE_URL = 'http://localhost:8070'
 
 class QBaseRequest(QObject):
 
-    manager = QNetworkAccessManager()
-
     def __init__(self, url, params=None, parent=None):
+        self.manager = QNetworkAccessManager()
         QObject.__init__(self, parent=parent)
 
         self.headers = {}
