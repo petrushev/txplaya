@@ -19,6 +19,12 @@ url_map = Map([
          endpoint=controllers.PlaylistManager),
     Rule('/playlist/current', defaults={'action': 'current'},
          endpoint=controllers.PlaylistManager),
+    Rule('/playlist/library/insert/<int:position>/<string:trackIds>',
+         defaults={'action': 'libraryInsert'},
+         endpoint=controllers.PlaylistManager),
+    Rule('/playlist/library/insert/<string:trackIds>',
+         defaults={'action': 'libraryInsert'},
+         endpoint=controllers.PlaylistManager),
     Rule('/player/start/<int:position>', defaults={'action': 'start'},
          endpoint=controllers.Player),
     Rule('/player/start', defaults={'action': 'start'},
@@ -27,4 +33,8 @@ url_map = Map([
          endpoint=controllers.Player),
     Rule('/player/pause', defaults={'action': 'pause'},
          endpoint=controllers.Player),
+    Rule('/library', defaults={'action': 'getLibrary'},
+         endpoint=controllers.Library),
+    Rule('/library/rescan', defaults={'action': 'rescan'},
+         endpoint=controllers.Library)
 ])

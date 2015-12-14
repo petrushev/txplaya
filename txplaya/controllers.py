@@ -1,10 +1,16 @@
 import json
+from time import time
 
 from twisted.web import http
+from twisted.internet.task import deferLater
+from twisted.python import log
 
 from werkzeug.urls import url_unquote
 
-from txplaya.player import Track, PlaylistError
+from txplaya.track import Track
+from txplaya.player import PlaylistError
+
+import txplaya.library
 
 
 class BaseController(object):
@@ -13,6 +19,7 @@ class BaseController(object):
         self.mainController = request.mainController
         self.request = request
         self.request.setHeader('Content-Type', 'text/html')
+        self.wait = False
 
     def write(self, data):
         self.request.write(data)
@@ -23,13 +30,15 @@ class BaseController(object):
 
 class PlaylistManager(BaseController):
 
-    def __init__(self, request, action, filepath='', position=None, start=None, end=None):
+    def __init__(self, request, action, filepath='', position=None, start=None, end=None,
+                 trackIds=''):
         BaseController.__init__(self, request)
 
         self.positionArg = position
         self.filepathArg = filepath
         self.startArg = start
         self.endArg = end
+        self.trackIdsArg = trackIds
 
         self.request.setResponseCode(http.OK)
 
@@ -48,13 +57,23 @@ class PlaylistManager(BaseController):
     def getData(self):
         return {'playlist': self.playlistData}
 
-    def insert(self):
-        filepath = '/' + url_unquote(self.filepathArg)
+    def _insert(self, filepath):
         track = Track(filepath)
         self.mainController.playlist.insert(track, self.positionArg)
-
         return {'msg': 'Track added',
                 'playlist': self.playlistData}
+
+    def insert(self):
+        filepath = '/' + url_unquote(self.filepathArg)
+        return self._insert(filepath)
+
+    def libraryInsert(self):
+        trackIds = self.trackIdsArg.split(',')
+        trackId = trackIds[0]
+        # TODO : support multiple tracks
+        # TODO : check for path existance, else return 404
+        filepath = txplaya.library.Library.decodePath(trackId)
+        return self._insert(filepath)
 
     def remove(self):
         try:
@@ -159,3 +178,42 @@ class Stream(BaseController):
 
     def onPush(self, buf):
         self.write(buf)
+
+
+class Library(BaseController):
+
+    def __init__(self, request, action):
+        BaseController.__init__(self, request)
+
+        self.request.setResponseCode(http.OK)
+
+        action = getattr(self, action)
+        response = action()
+
+        self.request.setHeader('Content-Type', 'application/json')
+
+        if not self.wait:
+            self.write(json.dumps(response))
+            self.finish()
+
+    def rescan(self):
+        startTime = time()
+        library = self.mainController.library
+        d = deferLater(library.reactor, 0, library.scanAll)
+
+        def onFinished(result):
+            log.msg('Rescan finised in %d seconds.' % int(time() - startTime))
+            log.msg('Total tracks: %d' % len(library.data))
+            library.saveBin()
+
+            self.write(json.dumps(
+                {'msg': 'Rescan finished',
+                 'library': self.mainController.library.data}))
+
+            self.finish()
+
+        d.addCallback(onFinished)
+        self.wait = True
+
+    def getLibrary(self):
+        return {'library': self.mainController.library.data}

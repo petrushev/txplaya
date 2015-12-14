@@ -1,10 +1,12 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QWidget
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
+
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
-
+from txplayagui.library import LibraryModel
+from txplayagui.library import unwrapMime
 
 # load translations
 locale = QLocale.system().name()
@@ -34,12 +36,26 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.pauseButton.clicked.connect(self.onPauseClicked)
         self.stopButton.clicked.connect(self.onStopClicked)
 
+        self.libraryDock.setTitleBarWidget(QWidget())
+        self.toggleLibraryButton.clicked.connect(self.onToggleLibrary)
+        self.rescanLibraryButton.clicked.connect(self.rescanLibraryClicked)
+
+        self.libraryModel = LibraryModel()
+        self.libraryTreeView.setModel(self.libraryModel)
+        self.libraryTreeView.doubleClicked.connect(self.onLibraryDoubleClick)
+
         self.fetchPlaylist()
+        self.fetchLibrary()
 
     def fetchPlaylist(self):
         from txplayagui.client import getPlaylist
         response = getPlaylist()
         response.finished.connect(self.getCallbackPlaylistUpdated(response))
+
+    def fetchLibrary(self):
+        from txplayagui.client import getLibrary
+        response = getLibrary()
+        response.finished.connect(self.getCallbackLibraryLoaded(response))
 
     def playlistDragEnterEvent(self, event):
         self._playlistDragDropHandle(event, isDropped=False)
@@ -134,10 +150,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         @pyqtSlot()
         def playlistUpdated():
             data = json.loads(response.data)
-            print data['playlist']
             self.playlistModel.updateAll(data['playlist'])
 
         return playlistUpdated
+
+    def getCallbackLibraryLoaded(self, response):
+
+        @pyqtSlot()
+        def libraryLoaded():
+            data = json.loads(response.data)
+            self.libraryModel.loadData(data['library'])
+
+            if 'msg' in data:
+                print data['msg']
+
+        return libraryLoaded
 
     def _play(self, index):
         from txplayagui.client import play, current
@@ -164,6 +191,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         menu = PlaylistMenu(index)
         menu.play.connect(self.onPlaylistMenuPlay)
         menu.remove.connect(self.onPlaylistMenuRemove)
+        menu.clear.connect(self.onPlaylistMenuClear)
 
         globalPosition = self.playlistTable.mapToGlobal(position)
         menu.exec_(globalPosition)
@@ -176,6 +204,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onPlaylistMenuRemove(self, index):
         from txplayagui.client import remove
         response = remove(index.row())
+        response.finished.connect(self.getCallbackPlaylistUpdated(response))
+
+    @pyqtSlot()
+    def onPlaylistMenuClear(self):
+        from txplayagui.client import clear
+        response = clear()
         response.finished.connect(self.getCallbackPlaylistUpdated(response))
 
     @pyqtSlot(QModelIndex)
@@ -208,3 +242,32 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             response2.finished.connect(self.getCallbackCurrentFetched(response2))
 
         response.finished.connect(onFinish)
+
+    @pyqtSlot(bool)
+    def onToggleLibrary(self, show):
+        if show:
+            self.libraryDock.show()
+        else:
+            self.libraryDock.hide()
+
+    @pyqtSlot()
+    def rescanLibraryClicked(self):
+        from txplayagui.client import rescanLibrary
+        response = rescanLibrary()
+        response.finished.connect(self.getCallbackLibraryLoaded(response))
+
+    @pyqtSlot(QModelIndex)
+    def onLibraryDoubleClick(self, index):
+        mimeData = unwrapMime(self.libraryModel.mimeData([index]))[0]
+        if 'hash' in mimeData:
+            hashes = [mimeData['hash']]
+
+        elif 'album' in mimeData:
+            hashes = self.libraryModel.albumHashes(index)
+        else:
+            # artist clicked
+            return
+
+        from txplayagui.client import libraryInsert
+        response = libraryInsert(hashes)
+        response.finished.connect(self.getCallbackPlaylistUpdated(response))

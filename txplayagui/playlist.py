@@ -6,6 +6,7 @@ from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSi
 from mutagen.id3 import ID3
 
 
+# TODO : replace with metadata from playlist
 class Track(object):
 
     def __init__(self, path=None):
@@ -71,11 +72,12 @@ class PlaylistModel(QAbstractTableModel):
             self.insertTrack(rowTarget - 1, track)
 
     def mimeData(self, indexes):
+        # TODO : refactor with utilities.mimeWrapJson
         data = json.dumps({'source': 'playlist',
                            'row': indexes[0].row()})
         mimeData = QMimeData()
         mimeData.setText(data)
-        
+
         return mimeData
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):

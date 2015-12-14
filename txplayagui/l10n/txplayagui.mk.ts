@@ -7,5 +7,15 @@
         <source>TxPlaya</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../ui/main.ui" line="216"/>
+        <source>Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main.ui" line="286"/>
+        <source>Rescan</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

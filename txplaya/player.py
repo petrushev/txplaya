@@ -9,11 +9,10 @@ from twisted.internet import reactor
 from twisted.internet.task import deferLater
 from twisted.python import log
 
-from mutagen.id3 import ID3
-from mutagen.mp3 import MP3
+from txplaya.library import Library
 
 ITER_TIME = 1.0
-HISTORY_CHUNKS = 3
+HISTORY_CHUNKS = 1
 
 
 itemgetter0 = itemgetter(0)
@@ -56,7 +55,7 @@ class Player(object):
         self._garbageCollect()
 
     def _garbageCollect(self):
-        _d = deferLater(reactor, 180, self._garbageCollect)
+        _d = deferLater(reactor, 1000, self._garbageCollect)
         bytes_ = gc.collect()
         log.msg('Garbage collected %d' % bytes_)
 
@@ -121,46 +120,22 @@ class Player(object):
         log.err('Player not attached')
 
 
-class Track(object):
-
-    def __init__(self, path):
-        self._path = path
-
-    @property
-    def data(self):
-        with open(self._path, 'rb') as f:
-            data = f.read()
-        return data
-
-    @property
-    def length(self):
-        return MP3(self._path).info.length
-
-    @property
-    def meta(self):
-        id3 = ID3(self._path)
-        return {'album': id3.get('TALB').text[0],
-                'artist': id3.get('TPE1').text[0],
-                'trackname': id3.get('TIT2').text[0],
-                'length': self.length}
-
-
 class Playlist(object):
 
     _reg = {}
     _order = {}
-    _current_uid = None
+    _currentUid = None
 
     def iterTrack(self):
         keys = sorted(self._order.keys())
         for dposition in keys:
-            track_uid = self._order[dposition]
-            yield self._reg[track_uid]
+            trackUid = self._order[dposition]
+            yield self._reg[trackUid]
 
-    def insert(self, track, position=None, track_uid=None):
-        if track_uid is None:
+    def insert(self, track, position=None, trackUid=None):
+        if trackUid is None:
             # track does not exist in the playlist yet
-            track_uid = uuid4()
+            trackUid = uuid4()
 
         if self._reg == {}:
             dposition = Decimal(1)
@@ -175,17 +150,17 @@ class Playlist(object):
             keys = sorted(self._order.keys())
             dposition = (keys[position - 1] + keys[position]) / 2
 
-        self._reg[track_uid] = track
-        self._order[dposition] = track_uid
+        self._reg[trackUid] = track
+        self._order[dposition] = trackUid
 
     def remove(self, position):
         keys = sorted(self._order.keys())
         dposition = keys[position]
-        track_uid = self._order[dposition]
+        trackUid = self._order[dposition]
 
         del self._order[dposition]
-        del self._reg[track_uid]
-        self._current_uid = None
+        del self._reg[trackUid]
+        self._currentUid = None
 
     def move(self, origin, target):
         if origin == target or origin + 1 == target:
@@ -193,36 +168,37 @@ class Playlist(object):
 
         keys = sorted(self._order.keys())
         dposition = keys[origin]
-        track_uid = self._order[dposition]
-        track = self._reg[track_uid]
+        trackUid = self._order[dposition]
+        track = self._reg[trackUid]
 
         self.remove(origin)
 
         if origin > target:
-            self.insert(track, target, track_uid)
+            self.insert(track, target, trackUid)
         else:
-            self.insert(track, target - 1, track_uid)
+            self.insert(track, target - 1, trackUid)
 
-        self._current_uid = track_uid
+        self._currentUid = trackUid
 
     def clear(self):
+        self._order.clear()
         self._reg.clear()
 
     @property
     def currentPosition(self):
-        if self._current_uid is None:
+        if self._currentUid is None:
             return None
 
         keys = sorted(self._order.items(), key=itemgetter0)
-        positions = dict((track_uid, position)
-                         for position, (_, track_uid) in enumerate(keys))
-        return positions[self._current_uid]
+        positions = dict((trackUid, position)
+                         for position, (_, trackUid) in enumerate(keys))
+        return positions[self._currentUid]
 
     @property
     def currentTrack(self):
-        if self._current_uid is None:
+        if self._currentUid is None:
             return None
-        return self._reg[self._current_uid]
+        return self._reg[self._currentUid]
 
     def start(self, position=None):
         if self._reg == {}:
@@ -236,11 +212,11 @@ class Playlist(object):
 
         keys = sorted(self._order.keys())
         dposition = keys[position]
-        track_uid = self._order[dposition]
-        self._current_uid = track_uid
+        trackUid = self._order[dposition]
+        self._currentUid = trackUid
 
     def stop(self):
-        self._current_uid = None
+        self._currentUid = None
 
     def stepNext(self):
         position = self.currentPosition
@@ -264,6 +240,7 @@ class MainController(object):
         self.player = Player()
         self.playlist = Playlist()
         self.listenerRegistry = ListenerRegistry()
+        self.library = Library(reactor)
 
         self.player.onPush = self.onBufferReceived
         self.player.onTrackFinished = self.onTrackFinished

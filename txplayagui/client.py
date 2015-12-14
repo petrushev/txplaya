@@ -58,6 +58,10 @@ def remove(position):
     url = BASE_URL + '/playlist/remove/' + str(position)
     return _requestGet(url)
 
+def clear():
+    url = BASE_URL + '/playlist/clear'
+    return _requestGet(url)
+
 def play(position=None):
     url = BASE_URL + '/player/start'
     if position is not None:
@@ -78,4 +82,20 @@ def pause():
 
 def stop():
     url = '%s/player/stop' % BASE_URL
+    return _requestGet(url)
+
+def getLibrary():
+    url = BASE_URL + '/library'
+    return _requestGet(url)
+
+def rescanLibrary():
+    url = BASE_URL + '/library/rescan'
+    return _requestGet(url)
+
+def libraryInsert(hashes, position=None):
+    url = BASE_URL + '/playlist/library/insert/'
+    if position is not None:
+        url = url + str(position) + '/'
+    hashes_ = ','.join(hashes)
+    url = url + hashes_
     return _requestGet(url)
