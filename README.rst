@@ -17,15 +17,21 @@ Requirements
 Running
 -------
 
-Build resource, ui and translation files: ::
+Build resource, ui and translation files:
+
+.. code:: python
 
     ./build.sh
 
-Start server with: ::
+Start server with:
+
+.. code:: python
 
     TXPLAYA_LIBPATH="/path/to/your/music" twistd -ny playaservice.py
 
-Start client with: ::
+Start client with:
+
+.. code:: python
 
     python playagui.py
 
