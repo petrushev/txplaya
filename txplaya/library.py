@@ -10,8 +10,12 @@ from twisted.internet.task import deferLater
 
 from txplaya.track import Track
 
+if 'TXPLAYA_LIBPATH' in environ:
+    PATH = environ['TXPLAYA_LIBPATH']
+else:
+    from os.path import expanduser
+    PATH = path_join(expanduser('~'), 'Music')
 
-PATH = environ['TXPLAYA_LIBPATH']
 BINPATH = path_join(dirname(dirname(__file__)), '.library')
 
 
