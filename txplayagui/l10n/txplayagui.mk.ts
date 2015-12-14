@@ -8,12 +8,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="216"/>
+        <location filename="../ui/main.ui" line="227"/>
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="286"/>
+        <location filename="../ui/main.ui" line="297"/>
         <source>Rescan</source>
         <translation type="unfinished"></translation>
     </message>
