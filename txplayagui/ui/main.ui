@@ -102,7 +102,7 @@
          </font>
         </property>
         <property name="frameShape">
-         <enum>QFrame::Panel</enum>
+         <enum>QFrame::StyledPanel</enum>
         </property>
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
@@ -305,6 +305,9 @@
          <width>300</width>
          <height>0</height>
         </size>
+       </property>
+       <property name="selectionMode">
+        <enum>QAbstractItemView::ExtendedSelection</enum>
        </property>
        <attribute name="headerVisible">
         <bool>false</bool>

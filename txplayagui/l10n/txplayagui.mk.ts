@@ -13,7 +13,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="325"/>
+        <location filename="../ui/main.ui" line="328"/>
         <source>Rescan</source>
         <translation type="unfinished"></translation>
     </message>
