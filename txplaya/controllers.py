@@ -205,7 +205,7 @@ class Library(BaseController):
     def rescan(self):
         startTime = time()
         library = self.mainController.library
-        d = deferLater(library.reactor, 0, library.scanAll)
+        d = library.scanAll()
 
         def onFinished(result):
             log.msg('Rescan finised in %d seconds.' % int(time() - startTime))
