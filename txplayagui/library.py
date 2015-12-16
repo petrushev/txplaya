@@ -3,21 +3,53 @@ from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 from txplayagui.utilities import mimeWrapJson, unwrapMime
 
 
+# TODO : split into separate widget
+# TODO : loading icon replaces 'Rescan' button
+class SortedDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self._orderedKeys = sorted(self.keys())
+
+    def __setitem__(self, key, val):
+        resort = (key not in self)
+        dict.__setitem__(self, key, val)
+        if resort:
+            self._orderedKeys = sorted(self.keys())
+
+    def __delitem__(self, key):
+        dict.__delitem__(self, key)
+        self._orderedKeys.remove(key)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = self._orderedKeys[key]
+        return dict.__getitem__(self, key)
+
+    def itemAt(self, index):
+        key = self._orderedKeys[index]
+        return (key, self[key])
+
+    def index(self, key):
+        return self._orderedKeys.index(key)
+
+    def clear(self, *args, **kwargs):
+        dict.clear(self, *args, **kwargs)
+        self._orderedKeys[:] = []
+
 class LibraryItem(object):
 
     def __init__(self, data):
-        self._children = {}
+        self._children = SortedDict()
         self._data = data
         self._parent = None
 
     def row(self):
-        sorted_ = sorted(self.parentItem()._children.keys())
-        return sorted_.index(self._data)
+        return self.parentItem()._children.index(self._data)
 
     def childAt(self, row):
-        sorted_ = sorted(self._children.keys())
-        key = sorted_[row]
-        return self._children[key]
+        _key, child = self._children.itemAt(row)
+        return child
 
     def parentItem(self):
         return self._parent
@@ -26,10 +58,11 @@ class LibraryItem(object):
 class ArtistItem(LibraryItem):
 
     def row(self):
-        sorted_ = sorted(self.model._artists.keys())
-        return sorted_.index(self._data)
+        return self.model._artists.index(self._data)
 
     def data(self):
+        if self._data == '':
+            return ' Various artists'
         return self._data
 
     def mimeData(self):
@@ -42,7 +75,6 @@ class AlbumItem(LibraryItem):
         year, album = self._data
         if year:
             return '(%d) %s' % (year, album)
-
         return album
 
     def mimeData(self):
@@ -53,7 +85,7 @@ class AlbumItem(LibraryItem):
         return mimeWrapJson(res)
 
     def albumHashes(self):
-        sorted_ = sorted(self._children.keys())
+        sorted_ = self._children._orderedKeys
         return [self._children[key].hash for key in sorted_]
 
 
@@ -107,7 +139,7 @@ class LibraryModel(QAbstractItemModel):
     def __init__(self, *args, **kwargs):
         QAbstractItemModel.__init__(self, *args, **kwargs)
         self._rootIndex = QModelIndex()
-        self._artists = {}
+        self._artists = SortedDict()
 
     def columnCount(self, parent=QModelIndex()):
         return 1
@@ -150,9 +182,7 @@ class LibraryModel(QAbstractItemModel):
 
     def index(self, row, column, parent):
         if not parent.isValid():
-            sorted_artists = sorted(self._artists.keys())
-            key = sorted_artists[row]
-            item = self._artists[key]
+            _key,item = self._artists.itemAt(row)
         else:
             parentItem = parent.internalPointer()
             item = parentItem.childAt(row)
@@ -194,6 +224,29 @@ class LibraryModel(QAbstractItemModel):
                 trackItem.length = meta['length']
                 trackItem._parent = albumItem
                 albumItem._children[track] = trackItem
+
+        variousArtist = self._artists.get('')
+        if variousArtist is not None:
+            # recheck album artists
+            for album, albumItem in variousArtist._children.items():
+                albumArtists = set(trackItem._parseData()[3]
+                                   for track, trackItem in albumItem._children.iteritems())
+                if '' in albumArtists:
+                    albumArtists.remove('')
+
+                if len(albumArtists) == 1:
+                    newAlbumArtist = tuple(albumArtists)[0]
+                    del variousArtist._children[album]
+
+                    if newAlbumArtist in self._artists:
+                        artistItem = self._artists[newAlbumArtist]
+                    else:
+                        artistItem = ArtistItem(newAlbumArtist)
+                        artistItem.model = self
+                        self._artists[newAlbumArtist] = artistItem
+
+                    artistItem._children[album] = albumItem
+                    albumItem._parent = artistItem
 
         self.endResetModel()
 
