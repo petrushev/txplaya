@@ -14,7 +14,7 @@ class Track(object):
             data = f.read()
         return data
 
-    @property
+    @cached_property
     def length(self):
         try:
             return MP3(self._path).info.length

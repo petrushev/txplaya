@@ -243,7 +243,7 @@ class MainController(object):
         self.playlist = Playlist()
         self.listenerRegistry = ListenerRegistry()
         self.infoListenerRegistry = ListenerRegistry()
-        self.library = Library(reactor)
+        self.library = Library()
 
         self.player.onPush = self.onBufferReceived
         self.player.onTrackFinished = self.onTrackFinished

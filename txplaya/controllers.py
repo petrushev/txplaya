@@ -2,6 +2,7 @@ import json
 from time import time
 
 from twisted.web import http
+from twisted.internet import reactor
 from twisted.internet.task import deferLater
 from twisted.python import log
 
@@ -203,23 +204,42 @@ class Library(BaseController):
             self.finish()
 
     def rescan(self):
-        startTime = time()
-        library = self.mainController.library
-        d = library.scanAll()
+        self.request.setHeader('Content-Type', 'text/plain')
 
-        def onFinished(result):
-            log.msg('Rescan finised in %d seconds.' % int(time() - startTime))
-            log.msg('Total tracks: %d' % len(library.data))
-            library.saveBin()
+        self.dirs = self.mainController.library.scanDirs()
 
-            self.write(json.dumps(
-                {'msg': 'Rescan finished',
-                 'library': self.mainController.library.data}))
+        self.startTime = time()
+        self.total = len(self.dirs)
+        self.progress = 0
 
-            self.finish()
-
-        d.addCallback(onFinished)
+        self._loopScan()
         self.wait = True
+
+    def _loopScan(self):
+        if len(self.dirs) == 0:
+            return self.scanFinished()
+
+        dirname, filenames = self.dirs.pop()
+        self.mainController.library.scanFiles(dirname, filenames)
+
+        newProgress = int((1. - len(self.dirs) * 1.0 / self.total) * 100)
+
+        if int(newProgress) > self.progress:
+            self.progress = newProgress
+            self.request.write(json.dumps({'scanprogress': newProgress}) + '\n')
+
+        deferLater(reactor, 0, self._loopScan)
+
+    def scanFinished(self):
+        library = self.mainController.library
+
+        log.msg('Rescan finised in %d seconds.' % int(time() - self.startTime))
+        log.msg('Total tracks: %d' % len(library.data))
+        library.saveBin()
+
+        self.write(json.dumps({'msg': 'Rescan finished',
+                               'library': library.data}) + '\n')
+        self.finish()
 
     def getLibrary(self):
         return {'library': self.mainController.library.data}
