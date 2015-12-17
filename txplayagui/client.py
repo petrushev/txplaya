@@ -8,8 +8,9 @@ BASE_URL = 'http://localhost:8070'
 
 class QBaseRequest(QObject):
 
+    finished = pyqtSignal()
+
     def __init__(self, url, params=None, parent=None):
-        self.manager = QNetworkAccessManager()
         QObject.__init__(self, parent=parent)
 
         self.headers = {}
@@ -21,13 +22,19 @@ class QBaseRequest(QObject):
 
         self.request = QNetworkRequest(self.qUrl)
 
+    @property
+    def manager(self):
+        if not hasattr(QBaseRequest, '_manager'):
+            QBaseRequest._manager = QNetworkAccessManager()
+
+        return QBaseRequest._manager
+
     def close(self):
         self.response.close()
+        self.response.deleteLater()
 
 
 class QRequest(QBaseRequest):
-
-    finished = pyqtSignal()
 
     def get(self):
         self.response = self.manager.get(self.request)
@@ -53,6 +60,7 @@ class QStreamRequest(QBaseRequest):
     def get(self):
         self.response = self.manager.get(self.request)
         self.response.readyRead.connect(self._onReadyRead)
+        self.response.finished.connect(self._onFinished)
 
     def _onReadyRead(self):
         tmp = self.response.readAll().data()
@@ -60,6 +68,15 @@ class QStreamRequest(QBaseRequest):
         while '\n' in self._buf:
             line, self._buf = self._buf.split('\n', 1)
             self.lineReceived.emit(line)
+
+    @pyqtSlot()
+    def _onFinished(self):
+        while '\n' in self._buf:
+            line, self._buf = self._buf.split('\n', 1)
+            self.lineReceived.emit(line)
+
+        self.finished.emit()
+        self.response.deleteLater()
 
 
 def _requestGet(url):
@@ -114,7 +131,9 @@ def getLibrary():
 
 def rescanLibrary():
     url = BASE_URL + '/library/rescan'
-    return _requestGet(url)
+    rq = QStreamRequest(url)
+    rq.get()
+    return rq
 
 def libraryInsert(hashes, position=None):
     url = BASE_URL + '/playlist/library/insert/'

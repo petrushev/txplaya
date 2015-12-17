@@ -315,7 +315,7 @@
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <layout class="QHBoxLayout" name="scanControlsLayout">
        <item>
         <widget class="QPushButton" name="rescanLibraryButton">
          <property name="sizePolicy">
@@ -330,17 +330,17 @@
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QProgressBar" name="scanProgressBar">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
+         <property name="value">
+          <number>0</number>
          </property>
-        </spacer>
+        </widget>
        </item>
       </layout>
      </item>
