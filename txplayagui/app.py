@@ -54,18 +54,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.queryLibSearchBox.textChanged.connect(self.onLibraryQueryChanged)
         self.clearLibSearchButton.clicked.connect(self.onLibraryQueryClear)
 
-        QTimer.singleShot(100, self.fetchCurrent)
+        QTimer.singleShot(0, self.infoStreamStart)
         QTimer.singleShot(200, self.fetchPlaylist)
-        QTimer.singleShot(300, self.fetchLibrary)
+        QTimer.singleShot(400, self.fetchLibrary)
 
+    def infoStreamStart(self):
         self.infoStream = QInfoStream()
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playlistFinished.connect(self.onPlaylistFinished)
-
-    def fetchCurrent(self):
-        from txplayagui.client import current
-        response = current()
-        response.finished.connect(self.getCallbackCurrentFetched(response))
 
     def fetchPlaylist(self):
         from txplayagui.client import getPlaylist

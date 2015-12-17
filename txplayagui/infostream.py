@@ -1,5 +1,7 @@
 import json
+
 from PyQt5.QtCore import QObject, pyqtSignal
+
 
 class QInfoStream(QObject):
 
@@ -16,10 +18,12 @@ class QInfoStream(QObject):
     def _feedEvent(self, data):
         data = json.loads(data.strip())
         if 'event' not in data or 'data' not in data:
-            return
+            print 'Infostream: invalid event', repr(data)
         event, data = data['event'], data['data']
 
         if event == 'TrackStarted':
             self.trackStarted.emit(data)
         elif event == 'PlaylistFinished':
             self.playlistFinished.emit()
+        else:
+            print 'Infostream: %s event not implemented' % event
