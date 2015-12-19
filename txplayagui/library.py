@@ -79,7 +79,7 @@ class AlbumItem(LibraryItem):
 
     def mimeData(self):
         year, album = self._data
-        res = unwrapMime(self._parent.mimeData())
+        res = unwrapMime(self.artistItem().mimeData())
         res.update({'album': album,
                     'year': year})
         return mimeWrapJson(res)
@@ -88,23 +88,31 @@ class AlbumItem(LibraryItem):
         sorted_ = self._children._orderedKeys
         return [self._children[key].hash for key in sorted_]
 
+    def artistItem(self):
+        return self._parent
+
+    def discCount(self):
+        if not hasattr(self, '_discCount'):
+            discPositions = set(trackItem._data[0]
+                            for trackItem in self._children.itervalues())
+            self._discCount = len(discPositions)
+
+        return self._discCount
+
 
 class TrackItem(LibraryItem):
 
-    def _parseData(self):
-        if len(self._data) == 4:
-            disc_number, tracknumber, trackname, artist = self._data
-        else:
-            disc_number, tracknumber, trackname = self._data
-            artist = ''
-
-        return disc_number, tracknumber, trackname, artist
+    def __init__(self, data):
+        LibraryItem.__init__(self, data)
+        if len(data) == 3:
+            data = data + ('',)
+        self._data = data
 
     def data(self):
-        disc_number, tracknumber, trackname, artist = self._parseData()
+        disc_number, tracknumber, trackname, artist = self._data
         display = ''
-        if disc_number:
-            display = '#%d - ' % disc_number
+        if disc_number and self.albumItem().discCount() > 1:
+            display = '%d/' % disc_number
         if tracknumber:
             display = display + '%d. ' % tracknumber
 
@@ -115,9 +123,9 @@ class TrackItem(LibraryItem):
         return display
 
     def mimeData(self):
-        disc_number, tracknumber, trackname, artist = self._parseData()
+        disc_number, tracknumber, trackname, artist = self._data
 
-        res = unwrapMime(self._parent.mimeData())
+        res = unwrapMime(self.albumItem.mimeData())
         res.update({'trackname': trackname,
                     'discnumber': disc_number,
                     'tracknumber': tracknumber,
@@ -130,6 +138,9 @@ class TrackItem(LibraryItem):
         meta = unwrapMime(self.mimeData())
         qText = ' '.join([meta['artist'], meta['album'], meta['albumartist'], meta['trackname']])
         return query in qText.lower()
+
+    def albumItem(self):
+        return self._parent
 
 
 class LibraryModel(QAbstractItemModel):
@@ -229,7 +240,7 @@ class LibraryModel(QAbstractItemModel):
         if variousArtist is not None:
             # recheck album artists
             for album, albumItem in variousArtist._children.items():
-                albumArtists = set(trackItem._parseData()[3]
+                albumArtists = set(trackItem._data[3]
                                    for track, trackItem in albumItem._children.iteritems())
                 if '' in albumArtists:
                     albumArtists.remove('')
@@ -257,6 +268,9 @@ class LibraryModel(QAbstractItemModel):
 
         return item.albumHashes()
 
+    # TODO : showAllTracks
+    # TODO: rescan with active filter
+
     def filter(self, query):
         filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
                     for artistKey, artistItem in self._artists.items()
@@ -264,6 +278,8 @@ class LibraryModel(QAbstractItemModel):
                     for trackItem in albumItem._children.values())
 
         shownArtistKeys, shownAlbumKeys = set(), set()
+
+        parentIndex = None
 
         for artistKey, albumKey, albumItem, trackRow, isMatch in filtered:
             parentIndex = self.createIndex(albumItem.row(), 0, albumItem)
