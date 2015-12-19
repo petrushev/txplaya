@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
-from txplayagui.utilities import mimeWrapJson, unwrapMime
+from txplayagui.utilities import mimeWrapJson
 
 
 # TODO : split into separate widget
@@ -37,6 +37,7 @@ class SortedDict(dict):
         dict.clear(self, *args, **kwargs)
         self._orderedKeys[:] = []
 
+
 class LibraryItem(object):
 
     def __init__(self, data):
@@ -58,15 +59,18 @@ class LibraryItem(object):
 class ArtistItem(LibraryItem):
 
     def row(self):
-        return self.model._artists.index(self._data)
+        key = self._data
+        if key.lower().startswith('the '):
+            key = self._data[4:]
+        return self.model._artists.index(key)
 
     def data(self):
         if self._data == '':
             return ' Various artists'
         return self._data
 
-    def mimeData(self):
-        return mimeWrapJson({'albumartist': self._data})
+    def mimeDataDict(self):
+        return {'albumartist': self._data}
 
 
 class AlbumItem(LibraryItem):
@@ -77,12 +81,12 @@ class AlbumItem(LibraryItem):
             return '(%d) %s' % (year, album)
         return album
 
-    def mimeData(self):
+    def mimeDataDict(self):
         year, album = self._data
-        res = unwrapMime(self.artistItem().mimeData())
+        res = self.artistItem().mimeDataDict()
         res.update({'album': album,
                     'year': year})
-        return mimeWrapJson(res)
+        return res
 
     def albumHashes(self):
         sorted_ = self._children._orderedKeys
@@ -116,22 +120,24 @@ class TrackItem(LibraryItem):
 
         return display
 
-    def mimeData(self):
+    def mimeDataDict(self):
         disc_number, tracknumber, trackname, artist = self._data
 
-        res = unwrapMime(self.albumItem().mimeData())
+        res = self.albumItem().mimeDataDict()
         res.update({'trackname': trackname,
                     'discnumber': disc_number,
                     'tracknumber': tracknumber,
                     'artist': artist,
                     'length': self.length,
                     'hash': self.hash})
-        return mimeWrapJson(res)
+        return res
 
     def match(self, query):
-        meta = unwrapMime(self.mimeData())
-        qText = ' '.join([meta['artist'], meta['album'], meta['albumartist'], meta['trackname']])
-        return query in qText.lower()
+        if not hasattr(self, '_cacheQueryText'):
+            meta = self.mimeDataDict()
+            self._cacheQueryText = ' '.join([meta['artist'], meta['album'],
+                                             meta['albumartist'], meta['trackname']]).lower()
+        return query in self._cacheQueryText
 
     def albumItem(self):
         return self._parent
@@ -164,9 +170,8 @@ class LibraryModel(QAbstractItemModel):
         return None
 
     def mimeData(self, indexes):
-        mimeDatas = (index.internalPointer().mimeData() for index in indexes)
-        mimeDataUnwrapped = [unwrapMime(mimeData) for mimeData in mimeDatas]
-        return mimeWrapJson(mimeDataUnwrapped)
+        mimeDataDicts = [index.internalPointer().mimeDataDict() for index in indexes]
+        return mimeWrapJson(mimeDataDicts)
 
     def flags(self, index):
         item = index.internalPointer()
@@ -211,12 +216,16 @@ class LibraryModel(QAbstractItemModel):
             else:
                 track = track + ('',)
 
-            if albumartist in self._artists:
-                artistItem = self._artists[albumartist]
+            albumartistkey = albumartist
+            if albumartistkey.lower().startswith('the '):
+                albumartistkey = albumartist[4:]
+
+            if albumartistkey in self._artists:
+                artistItem = self._artists[albumartistkey]
             else:
                 artistItem = ArtistItem(albumartist)
                 artistItem.model = self
-                self._artists[albumartist] = artistItem
+                self._artists[albumartistkey] = artistItem
 
             if album in artistItem._children:
                 albumItem = artistItem._children[album]
@@ -245,12 +254,16 @@ class LibraryModel(QAbstractItemModel):
                     newAlbumArtist = tuple(albumArtists)[0]
                     del variousArtist._children[album]
 
-                    if newAlbumArtist in self._artists:
-                        artistItem = self._artists[newAlbumArtist]
+                    newAlbumArtistKey = newAlbumArtist
+                    if newAlbumArtistKey.lower().startswith('the '):
+                        newAlbumArtistKey = newAlbumArtistKey[4:]
+
+                    if newAlbumArtistKey in self._artists:
+                        artistItem = self._artists[newAlbumArtistKey]
                     else:
                         artistItem = ArtistItem(newAlbumArtist)
                         artistItem.model = self
-                        self._artists[newAlbumArtist] = artistItem
+                        self._artists[newAlbumArtistKey] = artistItem
 
                     artistItem._children[album] = albumItem
                     albumItem._parent = artistItem
@@ -293,7 +306,8 @@ class LibraryModel(QAbstractItemModel):
             else:
                 # show artist, filter albums
                 self.toggleRow.emit(artistItem.row(), self._rootIndex, True)
-                for albumKey, albumItem in artistItem._children.items():
+
+                for albumKey, albumItem in artistItem._children.iteritems():
                     parentIndex = self.createIndex(artistItem.row(), 0, artistItem)
 
                     if albumKey in shownAlbumKeys:

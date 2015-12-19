@@ -7,7 +7,7 @@ from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint,\
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
 from txplayagui.library import LibraryModel
-from txplayagui.library import unwrapMime
+from txplayagui.utilities import unwrapMime
 from txplayagui.infostream import QInfoStream
 
 # load translations
@@ -18,6 +18,8 @@ _success = translator.load('txplayagui/l10n/deskdict.' + locale + '.qm')
 if not _success:
     translator = None
 
+
+# TODO : optimize initialization queries
 
 class MainWindow(Ui_MainWindow, QMainWindow):
 
