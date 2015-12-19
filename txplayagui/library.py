@@ -264,14 +264,13 @@ class LibraryModel(QAbstractItemModel):
 
         return item.albumHashes()
 
-    # TODO : showAllTracks
     # TODO: active filter on library load
 
     def filter(self, query):
         filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
-                    for artistKey, artistItem in self._artists.items()
-                    for albumKey, albumItem in artistItem._children.items()
-                    for trackItem in albumItem._children.values())
+                    for artistKey, artistItem in self._artists.iteritems()
+                    for albumKey, albumItem in artistItem._children.iteritems()
+                    for trackItem in albumItem._children.itervalues())
 
         shownArtistKeys, shownAlbumKeys = set(), set()
 
@@ -301,3 +300,15 @@ class LibraryModel(QAbstractItemModel):
                         self.toggleRow.emit(albumItem.row(), parentIndex, True)
                     else:
                         self.toggleRow.emit(albumItem.row(), parentIndex, False)
+
+    def showAll(self):
+        for artistItem in self._artists.itervalues():
+            self.toggleRow.emit(artistItem.row(), self._rootIndex, True)
+            artistIndex = self.createIndex(artistItem.row(), 0, artistItem)
+
+            for albumItem in artistItem._children.itervalues():
+                self.toggleRow.emit(albumItem.row(), artistIndex, True)
+                albumIndex = self.createIndex(albumItem.row(), 0, albumItem)
+
+                for trackItem in albumItem._children.itervalues():
+                    self.toggleRow.emit(trackItem.row(), albumIndex, True)

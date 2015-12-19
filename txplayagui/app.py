@@ -310,14 +310,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(unicode)
     def onLibraryQueryChanged(self, query):
         if len(query) > 2 or query == '':
-            self._filterLibrary(query.lower())
+            self.libraryModel.filter(query)
 
     @pyqtSlot()
     def onLibraryQueryClear(self):
-        return self._filterLibrary('')
-
-    def _filterLibrary(self, query):
-        self.libraryModel.filter(query)
+        return self.libraryModel.showAll()
 
     @pyqtSlot(str)
     def scanProgress(self, progress):
