@@ -102,12 +102,6 @@ class AlbumItem(LibraryItem):
 
 class TrackItem(LibraryItem):
 
-    def __init__(self, data):
-        LibraryItem.__init__(self, data)
-        if len(data) == 3:
-            data = data + ('',)
-        self._data = data
-
     def data(self):
         disc_number, tracknumber, trackname, artist = self._data
         display = ''
@@ -125,7 +119,7 @@ class TrackItem(LibraryItem):
     def mimeData(self):
         disc_number, tracknumber, trackname, artist = self._data
 
-        res = unwrapMime(self.albumItem.mimeData())
+        res = unwrapMime(self.albumItem().mimeData())
         res.update({'trackname': trackname,
                     'discnumber': disc_number,
                     'tracknumber': tracknumber,
@@ -214,6 +208,8 @@ class LibraryModel(QAbstractItemModel):
 
             if albumartist != meta['artist']:
                 track = track + (meta['artist'],)
+            else:
+                track = track + ('',)
 
             if albumartist in self._artists:
                 artistItem = self._artists[albumartist]
@@ -269,7 +265,7 @@ class LibraryModel(QAbstractItemModel):
         return item.albumHashes()
 
     # TODO : showAllTracks
-    # TODO: rescan with active filter
+    # TODO: active filter on library load
 
     def filter(self, query):
         filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
@@ -290,7 +286,7 @@ class LibraryModel(QAbstractItemModel):
                 shownAlbumKeys.add(albumKey)
         del parentIndex
 
-        for artistKey, artistItem in self._artists.items():
+        for artistKey, artistItem in self._artists.iteritems():
             if artistKey not in shownArtistKeys:
                 # hide artist row
                 self.toggleRow.emit(artistItem.row(), self._rootIndex, False)
