@@ -1,4 +1,5 @@
 import json
+from math import floor, ceil
 
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
@@ -6,7 +7,6 @@ from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSi
 from mutagen.id3 import ID3
 
 
-# TODO : replace with metadata from playlist
 class Track(object):
 
     def __init__(self, path=None):
@@ -22,10 +22,13 @@ class Track(object):
     def fromData(cls, data):
         track = Track()
         track.id3 = {'Album': data['album'],
-                    'Title': data['trackname'],
-                    'Artist': data['artist']}
+                     'Title': data['trackname'],
+                     'Artist': data['artist']}
+        sec = data['length']
+        min_ = int(floor(sec/60))
+        sec = int(ceil(sec - min_ * 60))
+        track.id3['Length'] = '{0}:{1:02d}'.format(min_, sec)
         return track
-
 
 class PlaylistModel(QAbstractTableModel):
 
