@@ -101,12 +101,15 @@ class Player(object):
         self.playing = True
         self.paused = False
         self.play()
+        self.onStart()
 
     def stop(self):
         self.data = deque()
         self.history = deque()
         self.playing = False
         self.paused = False
+
+        self.onStop()
 
     def pause(self):
         self.paused = True
@@ -118,7 +121,13 @@ class Player(object):
     def onPush(self, buf):
         log.err('Player not attached')
 
+    def onStart(self):
+        log.err('Player not attached')
+
     def onTrackFinished(self):
+        log.err('Player not attached')
+
+    def onStop(self):
         log.err('Player not attached')
 
 
@@ -246,7 +255,9 @@ class MainController(object):
         self.library = Library()
 
         self.player.onPush = self.onBufferReceived
+        self.player.onStart = self.onPlaybackStarted
         self.player.onTrackFinished = self.onTrackFinished
+        self.player.onStop = self.onPlayerStopped
 
     def announce(self, data):
         buf = json.dumps(data) + '\n'
@@ -254,11 +265,6 @@ class MainController(object):
             _d = deferLater(reactor, 0, listener.onPush, buf)
 
     def onTrackFinished(self):
-        event = {'event': 'TrackFinished',
-                 'data': {'position': self.playlist.currentPosition,
-                          'track': self.playlist.currentTrack.meta}}
-        self.announce(event)
-
         nextPosition = self.playlist.stepNext()
 
         if nextPosition is None:
@@ -273,10 +279,21 @@ class MainController(object):
         self.player.feed(self.playlist.currentTrack)
         self.player.start()
 
+    def onPlaybackStarted(self):
+        event = {'event': 'TrackStarted',
+                 'data': {'position': self.playlist.currentPosition,
+                          'track': self.playlist.currentTrack.meta}}
+        self.announce(event)
+
+    def onPlayerStopped(self):
+        event = {'event': 'PlaybackFinished',
+                 'data': {}}
+        self.announce(event)
+
     def onPlaylistFinished(self):
         log.msg('Playlist finished')
 
-        event = {'event': 'PlaylistFinished',
+        event = {'event': 'PlaybackFinished',
                  'data': {}}
         self.announce(event)
 

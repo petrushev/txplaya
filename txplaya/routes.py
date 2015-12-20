@@ -17,8 +17,6 @@ url_map = Map([
          endpoint=controllers.PlaylistManager),
     Rule('/playlist/clear', defaults={'action': 'clear'},
          endpoint=controllers.PlaylistManager),
-    Rule('/playlist/current', defaults={'action': 'current'},
-         endpoint=controllers.PlaylistManager),
     Rule('/playlist/library/insert/<int:position>/<string:trackIds>',
          defaults={'action': 'libraryInsert'},
          endpoint=controllers.PlaylistManager),

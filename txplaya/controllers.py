@@ -113,15 +113,6 @@ class PlaylistManager(BaseController):
         return {'msg': 'Playlist cleared',
                 'playlist': self.playlistData}
 
-    def current(self):
-        if self.mainController.playlist.currentPosition is None:
-            return {'msg': 'Not playing',
-                    'position': -1,
-                    'track': {}}
-
-        return {'position': self.mainController.playlist.currentPosition,
-                'track': self.mainController.playlist.currentTrack.meta}
-
 
 class Player(BaseController):
 
@@ -257,7 +248,7 @@ class InfoStream(BaseStream):
         playlist = self.mainController.playlist
 
         if playlist.currentPosition is None:
-            event = {'event': 'PlaylistFinished',
+            event = {'event': 'PlaybackFinished',
                      'data': {}}
         else:
             event = {'event': 'TrackStarted',
