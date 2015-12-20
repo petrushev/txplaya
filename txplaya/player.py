@@ -238,6 +238,7 @@ class Playlist(object):
 
         nextPosition = position + 1
         if nextPosition >= len(self._reg):
+            self._currentUid = None
             return None
 
         self.start(nextPosition)
