@@ -1,8 +1,7 @@
 import json
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint,\
-    QTimer
+from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
 
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
@@ -280,8 +279,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot(unicode)
     def onLibraryQueryChanged(self, query):
-        if len(query) > 2 or query == '':
+        if len(query) > 2:
             self.libraryModel.filter(query)
+        elif query == '':
+            return self.libraryModel.showAll()
 
     @pyqtSlot()
     def onLibraryQueryClear(self):
@@ -302,3 +303,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
             self.scanControlsLayout.addItem(spacerItem)
             self.scanProgressBar.hide()
+
+            # apply filter if active
+            query = self.queryLibSearchBox.text().lower()
+            if len(query) > 2:
+                self.libraryModel.filter(query)

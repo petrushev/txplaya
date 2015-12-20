@@ -277,8 +277,6 @@ class LibraryModel(QAbstractItemModel):
 
         return item.albumHashes()
 
-    # TODO: active filter on library load
-
     def filter(self, query):
         filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
                     for artistKey, artistItem in self._artists.iteritems()
