@@ -109,10 +109,6 @@ def play(position=None):
         url = url + '/' + str(position)
     return _requestGet(url)
 
-def current():
-    url = BASE_URL + '/playlist/current'
-    return _requestGet(url)
-
 def moveTrack(start, end):
     url = '%s/playlist/move/%d/%d' % (BASE_URL, start, end)
     return _requestGet(url)

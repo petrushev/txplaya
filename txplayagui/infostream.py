@@ -6,7 +6,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 class QInfoStream(QObject):
 
     trackStarted = pyqtSignal(object)
-    playlistFinished = pyqtSignal()
+    playbackFinished = pyqtSignal()
 
     def __init__(self):
         QObject.__init__(self)
@@ -23,7 +23,8 @@ class QInfoStream(QObject):
 
         if event == 'TrackStarted':
             self.trackStarted.emit(data)
-        elif event == 'PlaylistFinished':
-            self.playlistFinished.emit()
+
+        elif event == 'PlaybackFinished':
+            self.playbackFinished.emit()
         else:
             print 'Infostream: %s event not implemented' % event

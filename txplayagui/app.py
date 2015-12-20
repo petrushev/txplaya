@@ -63,7 +63,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def infoStreamStart(self):
         self.infoStream = QInfoStream()
         self.infoStream.trackStarted.connect(self.onTrackStarted)
-        self.infoStream.playlistFinished.connect(self.onPlaylistFinished)
+        self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
 
     def fetchPlaylist(self):
         from txplayagui.client import getPlaylist
@@ -144,25 +144,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         return logServer
 
-    def getCallbackCurrentFetched(self, response):
-
-        @pyqtSlot()
-        def onCurrentFetched():
-            print '[%d] %s' % (response.statusCode, response.data)
-            data = json.loads(response.data)
-
-            position = data['position']
-            if position == -1:
-                position = None
-            self.playlistModel.setPlayingPosition(data['position'])
-
-            if position is None:
-                self.playingLabel.setText('not playing')
-            else:
-                self.playingLabel.setText(data['track']['trackname'])
-
-        return onCurrentFetched
-
     def getCallbackPlaylistUpdated(self, response):
 
         @pyqtSlot()
@@ -185,7 +166,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         return libraryLoaded
 
     def _play(self, index):
-        from txplayagui.client import play, current
+        from txplayagui.client import play
         response = play(position=index.row())
 
         @pyqtSlot()
@@ -196,9 +177,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                 # playlist not in sync
                 self.fetchPlaylist()
                 return
-
-            response2 = current()
-            response2.finished.connect(self.getCallbackCurrentFetched(response2))
 
         response.finished.connect(onFinish)
 
@@ -250,16 +228,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot()
     def onStopClicked(self):
-        from txplayagui.client import stop, current
+        from txplayagui.client import stop
         response = stop()
-
-        @pyqtSlot()
-        def onFinish():
-            print '[%d] %s' % (response.statusCode, response.data)
-            response2 = current()
-            response2.finished.connect(self.getCallbackCurrentFetched(response2))
-
-        response.finished.connect(onFinish)
+        response.finished.connect(self.getCallbackLogServer(response))
 
     @pyqtSlot(bool)
     def onToggleLibrary(self, show):
@@ -302,7 +273,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.playingLabel.setText(trackname)
 
     @pyqtSlot()
-    def onPlaylistFinished(self):
+    def onPlaybackFinished(self):
         self.playingLabel.setText('not playing')
 
     @pyqtSlot(int, QModelIndex, bool)
