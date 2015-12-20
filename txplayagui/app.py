@@ -19,8 +19,6 @@ if not _success:
     translator = None
 
 
-# TODO : optimize initialization queries
-
 class MainWindow(Ui_MainWindow, QMainWindow):
 
     def __init__(self):
@@ -56,19 +54,19 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.queryLibSearchBox.textChanged.connect(self.onLibraryQueryChanged)
         self.clearLibSearchButton.clicked.connect(self.onLibraryQueryClear)
 
-        QTimer.singleShot(0, self.infoStreamStart)
-        QTimer.singleShot(200, self.fetchPlaylist)
-        QTimer.singleShot(400, self.fetchLibrary)
+        self.fetchPlaylistAndLibrary()
+        self.infoStreamStart()
 
     def infoStreamStart(self):
         self.infoStream = QInfoStream()
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
 
-    def fetchPlaylist(self):
+    def fetchPlaylistAndLibrary(self):
         from txplayagui.client import getPlaylist
         response = getPlaylist()
         response.finished.connect(self.getCallbackPlaylistUpdated(response))
+        response.finished.connect(self.fetchLibrary)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
