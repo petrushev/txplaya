@@ -248,17 +248,24 @@ class InfoStream(BaseStream):
         self.request.setHeader('Content-Type', 'text/plain')
         self.mainController.infoListenerRegistry.add(self)
 
-        # push current song
         playlist = self.mainController.playlist
 
+        # push current song
         if playlist.currentPosition is None:
             event = {'event': 'PlaybackFinished',
                      'data': {}}
         else:
             event = {'event': 'TrackStarted',
                      'data': {'position': playlist.currentPosition,
-                          'track': playlist.currentTrack.meta}}
+                              'track': playlist.currentTrack.meta}}
 
+        self.write(json.dumps(event) + '\n')
+
+        # push playlist data
+        playlistData = [track.meta
+                        for track in playlist.iterTrack()]
+        event = {'event': 'PlaylistChanged',
+                 'data': {'playlist': playlistData}}
         self.write(json.dumps(event) + '\n')
 
     def onConnectionLost(self, reason):

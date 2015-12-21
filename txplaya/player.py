@@ -143,7 +143,7 @@ class Playlist(object):
             trackUid = self._order[dposition]
             yield self._reg[trackUid]
 
-    def insert(self, track, position=None, trackUid=None):
+    def insert(self, track, position=None, trackUid=None, emit=True):
         if trackUid is None:
             # track does not exist in the playlist yet
             trackUid = uuid4()
@@ -164,7 +164,10 @@ class Playlist(object):
         self._reg[trackUid] = track
         self._order[dposition] = trackUid
 
-    def remove(self, position):
+        if emit:
+            self.onChanged()
+
+    def remove(self, position, emit=True):
         keys = sorted(self._order.keys())
         dposition = keys[position]
         trackUid = self._order[dposition]
@@ -172,6 +175,9 @@ class Playlist(object):
         del self._order[dposition]
         del self._reg[trackUid]
         self._currentUid = None
+
+        if emit:
+            self.onChanged()
 
     def move(self, origin, target):
         if origin == target or origin + 1 == target:
@@ -182,18 +188,21 @@ class Playlist(object):
         trackUid = self._order[dposition]
         track = self._reg[trackUid]
 
-        self.remove(origin)
+        self.remove(origin, emit=False)
 
         if origin > target:
-            self.insert(track, target, trackUid)
+            self.insert(track, target, trackUid, emit=False)
         else:
-            self.insert(track, target - 1, trackUid)
+            self.insert(track, target - 1, trackUid, emit=False)
 
         self._currentUid = trackUid
+
+        self.onChanged()
 
     def clear(self):
         self._order.clear()
         self._reg.clear()
+        self.onChanged()
 
     @property
     def currentPosition(self):
@@ -245,6 +254,9 @@ class Playlist(object):
 
         return nextPosition
 
+    def onChanged(self):
+        log.err('Playlist not attached')
+
 
 class MainController(object):
 
@@ -259,6 +271,7 @@ class MainController(object):
         self.player.onStart = self.onPlaybackStarted
         self.player.onTrackFinished = self.onTrackFinished
         self.player.onStop = self.onPlayerStopped
+        self.playlist.onChanged = self.onPlaylistChange
 
     def announce(self, data):
         buf = json.dumps(data) + '\n'
@@ -305,3 +318,11 @@ class MainController(object):
         # deliver buffer to all listeners
         for listener in self.listenerRegistry.iterListeners():
             _d = deferLater(reactor, 0, listener.onPush, buf)
+
+    def onPlaylistChange(self):
+        playlistData = [track.meta
+                        for track in self.playlist.iterTrack()]
+        event = {'event': 'PlaylistChanged',
+                 'data': {'playlist': playlistData}}
+
+        self.announce(event)
