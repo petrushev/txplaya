@@ -88,11 +88,11 @@ def getPlaylist():
     url = BASE_URL + '/playlist'
     return _requestGet(url)
 
-def insert(track, position=None):
+def insert(filepath, position=None):
     url = BASE_URL + '/playlist/insert/'
     if position is not None:
         url = url + str(position) + '/'
-    url = url + url_quote(track.path[1:])
+    url = url + url_quote(filepath[1:])
     return _requestGet(url)
 
 def remove(position):

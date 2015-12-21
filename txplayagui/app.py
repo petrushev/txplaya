@@ -1,6 +1,6 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy
+from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy, QErrorMessage
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
 
 from txplayagui.ui.main import Ui_MainWindow
@@ -98,10 +98,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
                     # file dropped
                     filepath = url.toLocalFile()
-                    track = Track(filepath)
 
                     from txplayagui.client import insert
-                    response = insert(track, rowTarget)
+                    response = insert(filepath, rowTarget)
                     response.finished.connect(self.getCallbackPlaylistUpdated(response))
 
                     return
@@ -147,6 +146,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         def playlistUpdated():
             data = json.loads(response.data)
             self.playlistModel.updateAll(data['playlist'])
+
+            if 'err' in data:
+                dialog = QErrorMessage(self)
+                dialog.showMessage(data['err'])
+                dialog.exec_()
 
         return playlistUpdated
 

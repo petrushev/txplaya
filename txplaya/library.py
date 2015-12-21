@@ -1,4 +1,4 @@
-from os.path import dirname, abspath, isfile
+from os.path import dirname, abspath
 from os.path import join as path_join
 from os import environ, walk
 from zlib import compress, decompress
