@@ -1,4 +1,4 @@
-from os.path import dirname
+from os.path import dirname, abspath, isfile
 from os.path import join as path_join
 from os import environ, walk
 from zlib import compress, decompress
@@ -12,6 +12,8 @@ if 'TXPLAYA_LIBPATH' in environ:
 else:
     from os.path import expanduser
     PATH = path_join(expanduser('~'), 'Music')
+
+PATH = abspath(PATH)
 
 BINPATH = path_join(dirname(dirname(__file__)), '.library')
 
@@ -59,3 +61,8 @@ class Library(object):
     def saveBin(self):
         with open(BINPATH, 'wb') as f:
             f.write(compress(json.dumps(self._lib)))
+
+    def pathExists(self, filepath):
+        filepath = abspath(filepath)
+        trackUid = Library.encodePath(filepath)
+        return trackUid in self._lib
