@@ -1,10 +1,10 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy, QErrorMessage
+from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
 
 from txplayagui.ui.main import Ui_MainWindow
-from txplayagui.playlist import PlaylistModel, Track, PlaylistMenu
+from txplayagui.playlist import PlaylistModel, PlaylistMenu
 from txplayagui.library import LibraryModel
 from txplayagui.utilities import unwrapMime
 from txplayagui.infostream import QInfoStream
@@ -53,19 +53,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.queryLibSearchBox.textChanged.connect(self.onLibraryQueryChanged)
         self.clearLibSearchButton.clicked.connect(self.onLibraryQueryClear)
 
-        self.fetchPlaylistAndLibrary()
+        self.fetchLibrary()
         self.infoStreamStart()
 
     def infoStreamStart(self):
         self.infoStream = QInfoStream()
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
-
-    def fetchPlaylistAndLibrary(self):
-        from txplayagui.client import getPlaylist
-        response = getPlaylist()
-        response.finished.connect(self.getCallbackPlaylistUpdated(response))
-        response.finished.connect(self.fetchLibrary)
+        self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
@@ -100,9 +95,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     filepath = url.toLocalFile()
 
                     from txplayagui.client import insert
-                    response = insert(filepath, rowTarget)
-                    response.finished.connect(self.getCallbackPlaylistUpdated(response))
-
+                    _ = insert(filepath, rowTarget)
                     return
 
         # no urls or not local file
@@ -129,8 +122,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
 
         from txplayagui.client import moveTrack
-        response = moveTrack(rowSource, rowTarget)
-        response.finished.connect(self.getCallbackPlaylistUpdated(response))
+        moveTrack(rowSource, rowTarget)
 
     def getCallbackLogServer(self, response):
 
@@ -139,20 +131,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             print '[%d] %s' % (response.statusCode, response.data)
 
         return logServer
-
-    def getCallbackPlaylistUpdated(self, response):
-
-        @pyqtSlot()
-        def playlistUpdated():
-            data = json.loads(response.data)
-            self.playlistModel.updateAll(data['playlist'])
-
-            if 'err' in data:
-                dialog = QErrorMessage(self)
-                dialog.showMessage(data['err'])
-                dialog.exec_()
-
-        return playlistUpdated
 
     def getCallbackLibraryLoaded(self, response):
 
@@ -168,18 +146,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     def _play(self, index):
         from txplayagui.client import play
-        response = play(position=index.row())
-
-        @pyqtSlot()
-        def onFinish():
-            print '[%d] %s' % (response.statusCode, response.data)
-            data = json.loads(response.data)
-            if 'err' in data:
-                # playlist not in sync
-                self.fetchPlaylist()
-                return
-
-        response.finished.connect(onFinish)
+        _ = play(position=index.row())
 
     @pyqtSlot(QPoint)
     def playlistContextMenu(self, position):
@@ -200,14 +167,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(QModelIndex)
     def onPlaylistMenuRemove(self, index):
         from txplayagui.client import remove
-        response = remove(index.row())
-        response.finished.connect(self.getCallbackPlaylistUpdated(response))
+        _ = remove(index.row())
 
     @pyqtSlot()
     def onPlaylistMenuClear(self):
         from txplayagui.client import clear
-        response = clear()
-        response.finished.connect(self.getCallbackPlaylistUpdated(response))
+        _ = clear()
 
     @pyqtSlot(QModelIndex)
     def onPlaylistDoubleClick(self, index):
@@ -247,10 +212,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.scanResponse.lineReceived.connect(self.scanProgress)
         self.rescanLibraryButton.hide()
         self.scanProgressBar.show()
-
         self.scanControlsLayout.removeItem(self.scanControlsLayout.itemAt(2))
-
-        #response.finished.connect(self.getCallbackLibraryLoaded(response))
 
     @pyqtSlot(QModelIndex)
     def onLibraryDoubleClick(self, index):
@@ -265,8 +227,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             return
 
         from txplayagui.client import libraryInsert
-        response = libraryInsert(hashes)
-        response.finished.connect(self.getCallbackPlaylistUpdated(response))
+        _ = libraryInsert(hashes)
 
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
@@ -276,6 +237,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot()
     def onPlaybackFinished(self):
         self.playingLabel.setText('not playing')
+
+    @pyqtSlot(object)
+    def onPlaylistChanged(self, data):
+        self.playlistModel.updateAll(data['playlist'])
 
     @pyqtSlot(int, QModelIndex, bool)
     def onToggleRow(self, row, parentIndex, isShown):
@@ -299,7 +264,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             progress = data['scanprogress']
             self.scanProgressBar.setValue(progress)
         else:
-            self.scanResponse.response.deleteLater()
+            self.scanResponse.close()
             del self.scanResponse
 
             self.libraryModel.loadData(data['library'])
