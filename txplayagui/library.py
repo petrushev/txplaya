@@ -1,10 +1,11 @@
+import gc
+
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
 from txplayagui.utilities import mimeWrapJson
 
 
 # TODO : split into separate widget
-# TODO : loading icon replaces 'Rescan' button
 class SortedDict(dict):
 
     def __init__(self, *args, **kwargs):
@@ -37,6 +38,11 @@ class SortedDict(dict):
         dict.clear(self, *args, **kwargs)
         self._orderedKeys[:] = []
 
+    def popitem(self):
+        key, val = dict.popitem(self)
+        self._orderedKeys.remove(key)
+        return key, val
+
 
 class LibraryItem(object):
 
@@ -55,6 +61,12 @@ class LibraryItem(object):
     def parentItem(self):
         return self._parent
 
+    def clear(self):
+        self._parent = None
+        while self._children:
+            _, child = self._children.popitem()
+            child.clear()
+
 
 class ArtistItem(LibraryItem):
 
@@ -71,6 +83,10 @@ class ArtistItem(LibraryItem):
 
     def mimeDataDict(self):
         return {'albumartist': self._data}
+
+    def clear(self):
+        LibraryItem.clear(self)
+        self.model = None
 
 
 class AlbumItem(LibraryItem):
@@ -202,10 +218,14 @@ class LibraryModel(QAbstractItemModel):
     def loadData(self, libraryData):
         self.beginResetModel()
 
-        self._artists.clear()
+        while self._artists:
+            _, artistItem = self._artists.popitem()
+            artistItem.clear()
+
+        gc.collect()
 
         # fill new
-        for hash_, meta in libraryData.items():
+        for hash_, meta in libraryData.iteritems():
 
             albumartist = meta['albumartist']
             album = (meta['year'], meta['album'])
