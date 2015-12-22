@@ -1,13 +1,13 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QSpacerItem, QSizePolicy
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout
+from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer
 
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, PlaylistMenu
-from txplayagui.library import LibraryModel
-from txplayagui.utilities import unwrapMime
 from txplayagui.infostream import QInfoStream
+from txplayagui.librarywidget import LibraryWidget
+
 
 # load translations
 locale = QLocale.system().name()
@@ -39,22 +39,20 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.stopButton.clicked.connect(self.onStopClicked)
 
         self.libraryDock.setTitleBarWidget(QWidget())
+        self.libraryLayout = QVBoxLayout()
+        self.libraryDock.widget().setLayout(self.libraryLayout)
         self.toggleLibraryButton.clicked.connect(self.onToggleLibrary)
-        self.rescanLibraryButton.clicked.connect(self.rescanLibraryClicked)
 
-        self.scanProgressBar.hide()
-        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.scanControlsLayout.addItem(spacerItem)
+        self.library = LibraryWidget(self)
+        self.libraryLayout.addWidget(self.library)
 
-        self.libraryModel = LibraryModel()
-        self.libraryModel.toggleRow.connect(self.onToggleRow)
-        self.libraryTreeView.setModel(self.libraryModel)
-        self.libraryTreeView.doubleClicked.connect(self.onLibraryDoubleClick)
-        self.queryLibSearchBox.textChanged.connect(self.onLibraryQueryChanged)
-        self.clearLibSearchButton.clicked.connect(self.onLibraryQueryClear)
+        #self.libraryDockContent.layout().addWidget(self.library)
 
-        self.fetchLibrary()
+        self.library.rescanStarted.connect(self.onLibraryRescanStarted)
+        self.library.itemsActivated.connect(self.onLibraryItemActivated)
+
         self.infoStreamStart()
+        QTimer.singleShot(200, self.fetchLibrary)
 
     def infoStreamStart(self):
         self.infoStream = QInfoStream()
@@ -137,7 +135,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         @pyqtSlot()
         def libraryLoaded():
             data = json.loads(response.data)
-            self.libraryModel.loadData(data['library'])
+            self.library.rescanFinished(data['library'])
 
             if 'msg' in data:
                 print data['msg']
@@ -205,30 +203,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         else:
             self.libraryDock.hide()
 
-    @pyqtSlot()
-    def rescanLibraryClicked(self):
-        from txplayagui.client import rescanLibrary
-        self.scanResponse = rescanLibrary()
-        self.scanResponse.lineReceived.connect(self.scanProgress)
-        self.rescanLibraryButton.hide()
-        self.scanProgressBar.show()
-        self.scanControlsLayout.removeItem(self.scanControlsLayout.itemAt(2))
-
-    @pyqtSlot(QModelIndex)
-    def onLibraryDoubleClick(self, index):
-        mimeData = unwrapMime(self.libraryModel.mimeData([index]))[0]
-        if 'hash' in mimeData:
-            hashes = [mimeData['hash']]
-
-        elif 'album' in mimeData:
-            hashes = self.libraryModel.albumHashes(index)
-        else:
-            # artist clicked
-            return
-
-        from txplayagui.client import libraryInsert
-        _ = libraryInsert(hashes)
-
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
         trackname = trackData['track']['trackname']
@@ -242,38 +216,25 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onPlaylistChanged(self, data):
         self.playlistModel.updateAll(data['playlist'])
 
-    @pyqtSlot(int, QModelIndex, bool)
-    def onToggleRow(self, row, parentIndex, isShown):
-        self.libraryTreeView.setRowHidden(row, parentIndex, not isShown)
-
-    @pyqtSlot(unicode)
-    def onLibraryQueryChanged(self, query):
-        if len(query) > 2:
-            self.libraryModel.filter(query)
-        elif query == '':
-            return self.libraryModel.showAll()
-
     @pyqtSlot()
-    def onLibraryQueryClear(self):
-        return self.libraryModel.showAll()
+    def onLibraryRescanStarted(self):
+        from txplayagui.client import rescanLibrary
+        self.scanResponse = rescanLibrary()
+        self.scanResponse.lineReceived.connect(self.scanProgress)
 
     @pyqtSlot(str)
     def scanProgress(self, progress):
         data = json.loads(progress.rstrip())
         if 'scanprogress' in data:
             progress = data['scanprogress']
-            self.scanProgressBar.setValue(progress)
+            self.library.setProgress(progress)
         else:
             self.scanResponse.close()
             del self.scanResponse
 
-            self.libraryModel.loadData(data['library'])
-            self.rescanLibraryButton.show()
-            spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-            self.scanControlsLayout.addItem(spacerItem)
-            self.scanProgressBar.hide()
+            self.library.rescanFinished(data['library'])
 
-            # apply filter if active
-            query = self.queryLibSearchBox.text().lower()
-            if len(query) > 2:
-                self.libraryModel.filter(query)
+    @pyqtSlot(list)
+    def onLibraryItemActivated(self, hashes):
+        from txplayagui.client import libraryInsert
+        _ = libraryInsert(hashes)
