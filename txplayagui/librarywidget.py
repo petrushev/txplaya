@@ -15,9 +15,8 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
         QWidget.__init__(self, parent)
         Ui_LibraryWidget.setupUi(self, self)
 
+        self.rescanButton.hide()
         self.scanProgressBar.hide()
-        spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.scanControlsLayout.addItem(spacerItem)
 
         self.libraryModel = LibraryModel()
         self.treeView.setModel(self.libraryModel)
@@ -32,8 +31,8 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
     @pyqtSlot()
     def rescanClicked(self):
         self.rescanButton.hide()
-        self.scanProgressBar.show()
         self.scanControlsLayout.removeItem(self.scanControlsLayout.itemAt(2))
+        self.scanProgressBar.show()
 
         self.rescanStarted.emit()
 
@@ -76,6 +75,7 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
         spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.scanControlsLayout.addItem(spacerItem)
         self.scanProgressBar.hide()
+        self.scanProgressBar.setValue(0)
 
         # apply filter if active
         query = self.querySearchBox.text().lower()

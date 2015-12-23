@@ -1,6 +1,6 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QWidget
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer
 
 from txplayagui.ui.main import Ui_MainWindow
@@ -41,15 +41,10 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.prevButton.clicked.connect(self.onPrevClicked)
 
         self.libraryDock.setTitleBarWidget(QWidget())
-        self.libraryLayout = QVBoxLayout()
-        self.libraryDock.widget().setLayout(self.libraryLayout)
         self.toggleLibraryButton.clicked.connect(self.onToggleLibrary)
 
         self.library = LibraryWidget(self)
-        self.libraryLayout.addWidget(self.library)
-
-        #self.libraryDockContent.layout().addWidget(self.library)
-
+        self.libraryDock.setWidget(self.library)
         self.library.rescanStarted.connect(self.onLibraryRescanStarted)
         self.library.itemsActivated.connect(self.onLibraryItemActivated)
 
