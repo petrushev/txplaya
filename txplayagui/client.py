@@ -121,6 +121,14 @@ def stop():
     url = '%s/player/stop' % BASE_URL
     return _requestGet(url)
 
+def next_():
+    url = '%s/player/next' % BASE_URL
+    return _requestGet(url)
+
+def prev():
+    url = '%s/player/prev' % BASE_URL
+    return _requestGet(url)
+
 def getLibrary():
     url = BASE_URL + '/library'
     return _requestGet(url)

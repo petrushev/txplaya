@@ -37,6 +37,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.playButton.clicked.connect(self.onPlaySelected)
         self.pauseButton.clicked.connect(self.onPauseClicked)
         self.stopButton.clicked.connect(self.onStopClicked)
+        self.nextButton.clicked.connect(self.onNextClicked)
+        self.prevButton.clicked.connect(self.onPrevClicked)
 
         self.libraryDock.setTitleBarWidget(QWidget())
         self.libraryLayout = QVBoxLayout()
@@ -194,6 +196,18 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onStopClicked(self):
         from txplayagui.client import stop
         response = stop()
+        response.finished.connect(self.getCallbackLogServer(response))
+
+    @pyqtSlot()
+    def onNextClicked(self):
+        from txplayagui.client import next_
+        response = next_()
+        response.finished.connect(self.getCallbackLogServer(response))
+
+    @pyqtSlot()
+    def onPrevClicked(self):
+        from txplayagui.client import prev
+        response = prev()
         response.finished.connect(self.getCallbackLogServer(response))
 
     @pyqtSlot(bool)

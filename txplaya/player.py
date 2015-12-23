@@ -224,7 +224,7 @@ class Playlist(object):
         if self._reg == {}:
             raise PlaylistError, 'Empty playlist'
 
-        if position >= len(self._reg):
+        if position >= len(self._reg) or position < 0:
             raise PlaylistError, 'Position out of bounds'
 
         if position is None:

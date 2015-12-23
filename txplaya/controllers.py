@@ -21,12 +21,19 @@ class BaseController(object):
         self.request = request
         self.request.setHeader('Content-Type', 'text/html')
         self.wait = False
+        self.isFinished = False
+
+        self.request.notifyFinish().addErrback(self.finishWithError)
 
     def write(self, data):
         self.request.write(data)
 
     def finish(self):
-        self.request.finish()
+        if not self.isFinished:
+            self.request.finish()
+
+    def finishWithError(self, failure):
+        self.isFinished = True
 
 
 class BaseStream(BaseController):
@@ -138,8 +145,11 @@ class Player(BaseController):
         if self.positionArg is None:
             self.positionArg = 0
 
+        return self._start(self.positionArg)
+
+    def _start(self, position):
         try:
-            self.mainController.playlist.start(self.positionArg)
+            self.mainController.playlist.start(position)
         except PlaylistError, err:
             return {'err': repr(err)}
 
@@ -150,6 +160,18 @@ class Player(BaseController):
         player.start()
 
         return {'msg': 'Started'}
+
+    def next(self):
+        position = self.mainController.playlist.currentPosition
+        if position is None:
+            return {'err': 'Not playing'}
+        return self._start(position + 1)
+
+    def prev(self):
+        position = self.mainController.playlist.currentPosition
+        if position is None:
+            return {'err': 'Not playing'}
+        return self._start(position - 1)
 
     def stop(self):
         self.mainController.player.stop()
