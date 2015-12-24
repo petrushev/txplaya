@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="icons">
+    <file>img/reconnect.svg</file>
+    <file>img/dialog_close.svg</file>
     <file>img/clear_text.svg</file>
     <file>img/library.svg</file>
     <file>img/stop.svg</file>

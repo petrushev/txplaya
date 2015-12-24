@@ -8,6 +8,7 @@ class QInfoStream(QObject):
     trackStarted = pyqtSignal(object)
     playbackFinished = pyqtSignal()
     playlistChanged = pyqtSignal(object)
+    disconnected = pyqtSignal()
 
     def __init__(self):
         QObject.__init__(self)
@@ -15,6 +16,7 @@ class QInfoStream(QObject):
         from txplayagui.client import infostream
         self._rq = infostream()
         self._rq.lineReceived.connect(self._feedEvent)
+        self._rq.error.connect(self._onError)
 
     def _feedEvent(self, data):
         data = json.loads(data.strip())
@@ -33,3 +35,7 @@ class QInfoStream(QObject):
 
         else:
             print 'Infostream: %s event not implemented' % event
+
+    def _onError(self, code):
+        self._rq.close()
+        self.disconnected.emit()

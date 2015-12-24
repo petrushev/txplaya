@@ -64,5 +64,7 @@ target/
 
 txplayagui/ui/resource_rc.py
 txplayagui/ui/main.py
+txplayagui/ui/reconnectdialog.py
+txplayagui/ui/library.py
 .library
 twistd.pid

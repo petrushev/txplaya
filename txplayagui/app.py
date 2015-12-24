@@ -7,7 +7,7 @@ from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, PlaylistMenu
 from txplayagui.infostream import QInfoStream
 from txplayagui.librarywidget import LibraryWidget
-
+from txplayagui.reconnectdialog import ReconnectDialog
 
 # load translations
 locale = QLocale.system().name()
@@ -56,6 +56,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
         self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
+        self.infoStream.disconnected.connect(self.reconnectDialog)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
@@ -131,11 +132,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         @pyqtSlot()
         def libraryLoaded():
-            data = json.loads(response.data)
-            self.library.rescanFinished(data['library'])
+            try:
+                data = json.loads(response.data)
+                self.library.rescanFinished(data['library'])
 
-            if 'msg' in data:
-                print data['msg']
+                if 'msg' in data:
+                    print data['msg']
+            except Exception, err:
+                print 'Library load error:', repr(err)
 
         return libraryLoaded
 
@@ -247,3 +251,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onLibraryItemActivated(self, hashes):
         from txplayagui.client import libraryInsert
         _ = libraryInsert(hashes)
+
+    @pyqtSlot()
+    def reconnectDialog(self):
+        del self.infoStream
+        dialog = ReconnectDialog()
+        dialog.reconnected.connect(self.infoStreamStart)
+        dialog.reconnectCanceled.connect(self.closeMain)
+        dialog.exec_()
+
+    @pyqtSlot()
+    def closeMain(self):
+        self.close()

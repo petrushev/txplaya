@@ -1,14 +1,15 @@
 from PyQt5.QtCore import pyqtSignal, QObject, QUrl, pyqtSlot
-from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from PyQt5.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 
 from werkzeug.urls import url_encode, url_quote
 
-BASE_URL = 'http://localhost:8070'
+from txplayagui.settings import baseUrl
 
 
 class QBaseRequest(QObject):
 
     finished = pyqtSignal()
+    error = pyqtSignal(int)
 
     def __init__(self, url, params=None, parent=None):
         QObject.__init__(self, parent=parent)
@@ -33,12 +34,18 @@ class QBaseRequest(QObject):
         self.response.close()
         self.response.deleteLater()
 
+    @pyqtSlot(int)
+    def _onError(self, code):
+        if code != QNetworkReply.NoError:
+            self.error.emit(code)
+
 
 class QRequest(QBaseRequest):
 
     def get(self):
         self.response = self.manager.get(self.request)
         self.response.finished.connect(self._onFinished)
+        self.response.error.connect(self._onError)
 
     @pyqtSlot()
     def _onFinished(self):
@@ -61,6 +68,7 @@ class QStreamRequest(QBaseRequest):
         self.response = self.manager.get(self.request)
         self.response.readyRead.connect(self._onReadyRead)
         self.response.finished.connect(self._onFinished)
+        self.response.error.connect(self._onError)
 
     def _onReadyRead(self):
         tmp = self.response.readAll().data()
@@ -85,62 +93,62 @@ def _requestGet(url):
     return rq
 
 def getPlaylist():
-    url = BASE_URL + '/playlist'
+    url = baseUrl() + '/playlist'
     return _requestGet(url)
 
 def insert(filepath, position=None):
-    url = BASE_URL + '/playlist/insert/'
+    url = baseUrl() + '/playlist/insert/'
     if position is not None:
         url = url + str(position) + '/'
     url = url + url_quote(filepath[1:])
     return _requestGet(url)
 
 def remove(position):
-    url = BASE_URL + '/playlist/remove/' + str(position)
+    url = baseUrl() + '/playlist/remove/' + str(position)
     return _requestGet(url)
 
 def clear():
-    url = BASE_URL + '/playlist/clear'
+    url = baseUrl() + '/playlist/clear'
     return _requestGet(url)
 
 def play(position=None):
-    url = BASE_URL + '/player/start'
+    url = baseUrl() + '/player/start'
     if position is not None:
         url = url + '/' + str(position)
     return _requestGet(url)
 
 def moveTrack(start, end):
-    url = '%s/playlist/move/%d/%d' % (BASE_URL, start, end)
+    url = '%s/playlist/move/%d/%d' % (baseUrl(), start, end)
     return _requestGet(url)
 
 def pause():
-    url = '%s/player/pause' % BASE_URL
+    url = '%s/player/pause' % baseUrl()
     return _requestGet(url)
 
 def stop():
-    url = '%s/player/stop' % BASE_URL
+    url = '%s/player/stop' % baseUrl()
     return _requestGet(url)
 
 def next_():
-    url = '%s/player/next' % BASE_URL
+    url = '%s/player/next' % baseUrl()
     return _requestGet(url)
 
 def prev():
-    url = '%s/player/prev' % BASE_URL
+    url = '%s/player/prev' % baseUrl()
     return _requestGet(url)
 
 def getLibrary():
-    url = BASE_URL + '/library'
+    url = baseUrl() + '/library'
     return _requestGet(url)
 
 def rescanLibrary():
-    url = BASE_URL + '/library/rescan'
+    url = baseUrl() + '/library/rescan'
     rq = QStreamRequest(url)
     rq.get()
     return rq
 
 def libraryInsert(hashes, position=None):
-    url = BASE_URL + '/playlist/library/insert/'
+    url = baseUrl() + '/playlist/library/insert/'
     if position is not None:
         url = url + str(position) + '/'
     hashes_ = ','.join(hashes)
@@ -148,7 +156,7 @@ def libraryInsert(hashes, position=None):
     return _requestGet(url)
 
 def infostream():
-    url = BASE_URL + '/infostream'
+    url = baseUrl() + '/infostream'
     rq = QStreamRequest(url)
     rq.get()
     return rq

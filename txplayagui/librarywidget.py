@@ -15,7 +15,7 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
         QWidget.__init__(self, parent)
         Ui_LibraryWidget.setupUi(self, self)
 
-        self.rescanButton.hide()
+        self.rescanButton.show()
         self.scanProgressBar.hide()
 
         self.libraryModel = LibraryModel()
