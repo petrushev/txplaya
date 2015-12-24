@@ -113,6 +113,37 @@
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="timerLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>60</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="prevButton">
         <property name="minimumSize">
          <size>
@@ -254,7 +285,7 @@
      <x>0</x>
      <y>0</y>
      <width>977</width>
-     <height>21</height>
+     <height>27</height>
     </rect>
    </property>
   </widget>

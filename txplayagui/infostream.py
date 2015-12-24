@@ -1,4 +1,5 @@
 import json
+from math import ceil
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -9,6 +10,7 @@ class QInfoStream(QObject):
     playbackFinished = pyqtSignal()
     playlistChanged = pyqtSignal(object)
     disconnected = pyqtSignal()
+    timerUpdated = pyqtSignal(int)
 
     def __init__(self):
         QObject.__init__(self)
@@ -32,6 +34,10 @@ class QInfoStream(QObject):
 
         elif event == 'PlaylistChanged':
             self.playlistChanged.emit(data)
+
+        elif event == 'TimerUpdate':
+            time = int(ceil(data['time']))
+            self.timerUpdated.emit(time)
 
         else:
             print 'Infostream: %s event not implemented' % event

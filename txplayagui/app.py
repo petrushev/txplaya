@@ -57,6 +57,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
         self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
         self.infoStream.disconnected.connect(self.reconnectDialog)
+        self.infoStream.timerUpdated.connect(self.timerUpdated)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
@@ -224,6 +225,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot()
     def onPlaybackFinished(self):
         self.playingLabel.setText('not playing')
+        self.timerLabel.setText('')
 
     @pyqtSlot(object)
     def onPlaylistChanged(self, data):
@@ -257,9 +259,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         del self.infoStream
         dialog = ReconnectDialog()
         dialog.reconnected.connect(self.infoStreamStart)
-        dialog.reconnectCanceled.connect(self.closeMain)
+        dialog.reconnectCanceled.connect(self.close)
         dialog.exec_()
 
-    @pyqtSlot()
-    def closeMain(self):
-        self.close()
+    @pyqtSlot(int)
+    def timerUpdated(self, time):
+        min_ = int(time / 60)
+        sec = time - min_ * 60
+        self.timerLabel.setText('{0}:{1:02d}'.format(min_, sec))
