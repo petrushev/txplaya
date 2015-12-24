@@ -68,6 +68,7 @@ class Player(object):
         chunk_size = int(ceil(len(rawData) / num_chunks))
 
         self.data.clear()
+        self.timer = 0
 
         while len(rawData) > 0:
             chunk, rawData = rawData[:chunk_size], rawData[chunk_size:]
@@ -93,6 +94,10 @@ class Player(object):
 
         # push buffer to management
         self.onPush(buf)
+
+        # update timer
+        self.timer = self.timer + ITER_TIME
+        self.onTimerUpdate()
 
     def start(self):
         if len(self.data) == 0:
@@ -128,6 +133,9 @@ class Player(object):
         log.err('Player not attached')
 
     def onStop(self):
+        log.err('Player not attached')
+
+    def onTimerUpdate(self):
         log.err('Player not attached')
 
 
@@ -271,6 +279,7 @@ class MainController(object):
         self.player.onStart = self.onPlaybackStarted
         self.player.onTrackFinished = self.onTrackFinished
         self.player.onStop = self.onPlayerStopped
+        self.player.onTimerUpdate = self.onTimerUpdate
         self.playlist.onChanged = self.onPlaylistChange
 
     def announce(self, data):
@@ -325,4 +334,9 @@ class MainController(object):
         event = {'event': 'PlaylistChanged',
                  'data': {'playlist': playlistData}}
 
+        self.announce(event)
+
+    def onTimerUpdate(self):
+        event = {'event': 'TimerUpdate',
+                 'data': {'time': self.player.timer}}
         self.announce(event)
