@@ -155,7 +155,6 @@ class Player(BaseController):
 
         player = self.mainController.player
 
-        player.stop()
         player.feed(self.mainController.playlist.currentTrack)
         player.start()
 

@@ -103,10 +103,14 @@ class Player(object):
         if len(self.data) == 0:
             return
 
+        self.onStart()
+
+        if self.playing and not self.paused:
+            return
+
         self.playing = True
         self.paused = False
         self.play()
-        self.onStart()
 
     def stop(self):
         self.data = deque()
