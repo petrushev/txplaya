@@ -122,10 +122,12 @@ class Player(object):
 
     def pause(self):
         self.paused = True
+        self.onPaused(True)
 
     def resume(self):
         self.paused = False
         self.play()
+        self.onPaused(False)
 
     def onPush(self, buf):
         log.err('Player not attached')
@@ -140,6 +142,9 @@ class Player(object):
         log.err('Player not attached')
 
     def onTimerUpdate(self):
+        log.err('Player not attached')
+
+    def onPaused(self):
         log.err('Player not attached')
 
 
@@ -284,6 +289,7 @@ class MainController(object):
         self.player.onTrackFinished = self.onTrackFinished
         self.player.onStop = self.onPlayerStopped
         self.player.onTimerUpdate = self.onTimerUpdate
+        self.player.onPaused = self.onPlayerPaused
         self.playlist.onChanged = self.onPlaylistChange
 
     def announce(self, data):
@@ -315,6 +321,11 @@ class MainController(object):
     def onPlayerStopped(self):
         event = {'event': 'PlaybackFinished',
                  'data': {}}
+        self.announce(event)
+
+    def onPlayerPaused(self, paused):
+        event = {'event': 'PlaybackPaused',
+                 'data': {'paused': paused}}
         self.announce(event)
 
     def onPlaylistFinished(self):

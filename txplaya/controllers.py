@@ -275,12 +275,16 @@ class InfoStream(BaseStream):
         if playlist.currentPosition is None:
             event = {'event': 'PlaybackFinished',
                      'data': {}}
+            self.write(json.dumps(event) + '\n')
+
         else:
             event = {'event': 'TrackStarted',
                      'data': {'position': playlist.currentPosition,
                               'track': playlist.currentTrack.meta}}
-
-        self.write(json.dumps(event) + '\n')
+            self.write(json.dumps(event) + '\n')
+            event = {'event': 'PlaybackPaused',
+                     'data': {'paused': self.mainController.player.paused}}
+            self.write(json.dumps(event) + '\n')
 
         # push playlist data
         playlistData = [track.meta
