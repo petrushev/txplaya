@@ -8,6 +8,7 @@ class QInfoStream(QObject):
 
     trackStarted = pyqtSignal(object)
     playbackFinished = pyqtSignal()
+    playbackPaused = pyqtSignal(bool)
     playlistChanged = pyqtSignal(object)
     disconnected = pyqtSignal()
     timerUpdated = pyqtSignal(int)
@@ -31,6 +32,10 @@ class QInfoStream(QObject):
 
         elif event == 'PlaybackFinished':
             self.playbackFinished.emit()
+
+        elif event == 'PlaybackPaused':
+            paused = data['paused']
+            self.playbackPaused.emit(paused)
 
         elif event == 'PlaylistChanged':
             self.playlistChanged.emit(data)

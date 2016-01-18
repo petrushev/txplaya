@@ -26,7 +26,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="258"/>
+        <location filename="../ui/main.ui" line="261"/>
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>

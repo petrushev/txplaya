@@ -55,6 +55,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.infoStream = QInfoStream()
         self.infoStream.trackStarted.connect(self.onTrackStarted)
         self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
+        self.infoStream.playbackPaused.connect(self.onPlaybackPaused)
         self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
         self.infoStream.disconnected.connect(self.reconnectDialog)
         self.infoStream.timerUpdated.connect(self.timerUpdated)
@@ -189,8 +190,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot()
     def onPauseClicked(self):
         from txplayagui.client import pause
-        response = pause()
-        response.finished.connect(self.getCallbackLogServer(response))
+        _ = pause()
 
     @pyqtSlot()
     def onStopClicked(self):
@@ -222,10 +222,27 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         trackname = trackData['track']['trackname']
         self.playingLabel.setText(trackname)
 
+        self.playButton.hide()
+        self.pauseButton.show()
+        self.pauseButton.setChecked(False)
+        self.stopButton.show()
+
     @pyqtSlot()
     def onPlaybackFinished(self):
         self.playingLabel.setText('not playing')
         self.timerLabel.setText('')
+
+        self.playButton.show()
+        self.pauseButton.hide()
+        self.stopButton.hide()
+
+    @pyqtSlot(bool)
+    def onPlaybackPaused(self, paused):
+        self.playButton.hide()
+        self.pauseButton.show()
+        self.stopButton.show()
+
+        self.pauseButton.setChecked(paused)
 
     @pyqtSlot(object)
     def onPlaylistChanged(self, data):
