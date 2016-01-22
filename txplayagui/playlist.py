@@ -63,17 +63,6 @@ class PlaylistModel(QAbstractTableModel):
                         for trackData in playlistData]
         self.endResetModel()
 
-    def moveTrack(self, rowSource, rowTarget):
-        if rowSource == rowTarget or rowSource + 1 == rowTarget:
-            return
-
-        track = self.removeTrack(rowSource)
-
-        if rowSource > rowTarget:
-            self.insertTrack(rowTarget, track)
-        else:
-            self.insertTrack(rowTarget - 1, track)
-
     def mimeData(self, indexes):
         # TODO : refactor with utilities.mimeWrapJson
         data = json.dumps({'source': 'playlist',
