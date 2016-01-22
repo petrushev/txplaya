@@ -275,9 +275,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def reconnectDialog(self):
         del self.infoStream
         dialog = ReconnectDialog()
-        dialog.reconnected.connect(self.infoStreamStart)
-        dialog.reconnectCanceled.connect(self.close)
-        dialog.exec_()
+
+        reconnected = dialog.exec_()
+        if reconnected:
+            self.infoStreamStart()
+        else:
+            self.close()
 
     @pyqtSlot(int)
     def timerUpdated(self, time):

@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/icons/img/reconnect.svg</normaloff>:/icons/img/reconnect.svg</iconset>
+  </property>
   <property name="modal">
    <bool>true</bool>
   </property>
@@ -54,7 +58,7 @@
        <item>
         <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>TextLabel</string>
+          <string>Port</string>
          </property>
         </widget>
        </item>
@@ -147,7 +151,7 @@
      <item>
       <widget class="QPushButton" name="closeButton">
        <property name="text">
-        <string>Close</string>
+        <string>Exit</string>
        </property>
        <property name="icon">
         <iconset resource="resource.qrc">

@@ -1,4 +1,3 @@
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QDialog
 
 from txplayagui.ui.reconnectdialog import Ui_ReconnectDialog
@@ -6,9 +5,6 @@ from txplayagui.settings import host, port, setHost, setPort
 
 
 class ReconnectDialog(Ui_ReconnectDialog, QDialog):
-
-    reconnected = pyqtSignal()
-    reconnectCanceled = pyqtSignal()
 
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
@@ -23,9 +19,7 @@ class ReconnectDialog(Ui_ReconnectDialog, QDialog):
     def onReconnect(self):
         setHost(self.addressBox.text().strip())
         setPort(int(self.portBox.text()))
-        self.reconnected.emit()
-        self.close()
+        self.accept()
 
     def onClose(self):
-        self.reconnectCanceled.emit()
-        self.close()
+        self.reject()
