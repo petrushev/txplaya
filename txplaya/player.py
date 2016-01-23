@@ -161,14 +161,11 @@ class Playlist(object):
             yield self._reg[trackUid]
 
     def insert(self, track, position=None, trackUid=None, emit=True):
-        if trackUid is None:
-            # track does not exist in the playlist yet
-            trackUid = uuid4()
 
         if self._reg == {}:
             dposition = Decimal(1)
 
-        elif position is None or position >= len(self._reg):
+        elif position is None or position >= len(self._order):
             dposition = max(self._order.keys()) + 1
 
         elif position == 0:
@@ -178,7 +175,12 @@ class Playlist(object):
             keys = sorted(self._order.keys())
             dposition = (keys[position - 1] + keys[position]) / 2
 
+        if trackUid is None:
+            # track does not exist in the playlist yet
+            trackUid = uuid4()
+
         self._reg[trackUid] = track
+
         self._order[dposition] = trackUid
 
         if emit:
@@ -191,7 +193,9 @@ class Playlist(object):
 
         del self._order[dposition]
         del self._reg[trackUid]
-        self._currentUid = None
+
+        if trackUid == self._currentUid:
+            self._currentUid = None
 
         if emit:
             self.onChanged()
@@ -212,13 +216,12 @@ class Playlist(object):
         else:
             self.insert(track, target - 1, trackUid, emit=False)
 
-        self._currentUid = trackUid
-
         self.onChanged()
 
     def clear(self):
         self._order.clear()
         self._reg.clear()
+        self._currentUid = None
         self.onChanged()
 
     @property
@@ -227,9 +230,12 @@ class Playlist(object):
             return None
 
         keys = sorted(self._order.items(), key=itemgetter0)
-        positions = dict((trackUid, position)
-                         for position, (_, trackUid) in enumerate(keys))
-        return positions[self._currentUid]
+
+        for position, (_, trackUid) in enumerate(keys):
+            if trackUid == self._currentUid:
+                return position
+
+        raise PlaylistError, 'current uid not in _reg'
 
     @property
     def currentTrack(self):
