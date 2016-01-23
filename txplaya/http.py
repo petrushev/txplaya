@@ -1,6 +1,6 @@
 import json
 
-from twisted.web import http
+from twisted.web.http import Request, HTTPChannel, NOT_FOUND
 
 from werkzeug.exceptions import NotFound
 
@@ -16,7 +16,7 @@ def getFrontHandler():
 
     _mainController = MainController()
 
-    class FrontHandler(http.Request):
+    class FrontHandler(Request):
 
         mainController = _mainController
 
@@ -26,7 +26,7 @@ def getFrontHandler():
 
             except NotFound:
                 self.setHeader('Content-Type', 'text/html')
-                self.setResponseCode(http.NOT_FOUND)
+                self.setResponseCode(NOT_FOUND)
                 self.write(_NOT_FOUND_MSG)
                 self.finish()
                 return
@@ -36,9 +36,5 @@ def getFrontHandler():
     return FrontHandler
 
 
-class FrontChannel(http.HTTPChannel):
+class FrontChannel(HTTPChannel):
     requestFactory = getFrontHandler()
-
-
-class HttpFactory(http.HTTPFactory):
-    protocol = FrontChannel
