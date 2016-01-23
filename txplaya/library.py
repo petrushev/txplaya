@@ -43,6 +43,9 @@ class Library(object):
         compressed = urlsafe_b64decode(str(encodedPath))
         return decompress(compressed)
 
+    def clear(self):
+        self._lib.clear()
+
     def scanDirs(self):
         return [(dirpath, filenames)
                 for _pathId, (dirpath, _, filenames) in tuple(enumerate(walk(PATH)))]

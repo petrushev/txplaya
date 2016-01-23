@@ -222,6 +222,7 @@ class Library(BaseController):
     def rescan(self):
         self.request.setHeader('Content-Type', 'text/plain')
 
+        self.mainController.library.clear()
         self.dirs = self.mainController.library.scanDirs()
 
         self.startTime = time()
