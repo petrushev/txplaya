@@ -1,6 +1,7 @@
 from os.path import dirname, abspath
 from os.path import join as path_join
 from os import environ, walk
+from os import pathsep
 from zlib import compress, decompress
 import json
 from base64 import urlsafe_b64encode, urlsafe_b64decode
@@ -12,8 +13,6 @@ if 'TXPLAYA_LIBPATH' in environ:
 else:
     from os.path import expanduser
     PATH = path_join(expanduser('~'), 'Music')
-
-PATH = abspath(PATH)
 
 BINPATH = path_join(dirname(dirname(__file__)), '.library')
 
@@ -47,8 +46,15 @@ class Library(object):
         self._lib.clear()
 
     def scanDirs(self):
-        return [(dirpath, filenames)
-                for _pathId, (dirpath, _, filenames) in tuple(enumerate(walk(PATH)))]
+        paths = map(abspath, PATH.split(pathsep))
+
+        result = []
+        for path_ in paths:
+            partial = [(dirpath, filenames)
+                       for _pathId, (dirpath, _, filenames) in tuple(enumerate(walk(path_)))]
+            result.extend(partial)
+
+        return result
 
     def scanFiles(self, dirpath, filenames):
         for filename in filenames:
