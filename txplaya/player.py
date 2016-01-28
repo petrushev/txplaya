@@ -11,6 +11,7 @@ from twisted.internet.task import deferLater
 from twisted.python import log
 
 from txplaya.library import Library
+from txplaya.lastfm import getScrobbler
 
 ITER_TIME = 1.0
 HISTORY_CHUNKS = 1
@@ -290,6 +291,8 @@ class MainController(object):
         self.infoListenerRegistry = ListenerRegistry()
         self.library = Library()
 
+        self.scrobbler = getScrobbler()
+
         self.player.onPush = self.onBufferReceived
         self.player.onStart = self.onPlaybackStarted
         self.player.onTrackFinished = self.onTrackFinished
@@ -304,24 +307,29 @@ class MainController(object):
             _d = deferLater(reactor, 0, listener.onPush, buf)
 
     def onTrackFinished(self):
+        if self.scrobbler is not None:
+            deferLater(reactor, 0, self.scrobbler.scrobble, self.playlist.currentTrack)
+
         nextPosition = self.playlist.stepNext()
 
         if nextPosition is None:
             self.onPlaylistFinished()
             return
 
-        event = {'event': 'TrackStarted',
-                 'data': {'position': self.playlist.currentPosition,
-                          'track': self.playlist.currentTrack.meta}}
-        self.announce(event)
+        self.onPlaybackStarted()
 
         self.player.feed(self.playlist.currentTrack)
         self.player.start()
 
     def onPlaybackStarted(self):
+        track = self.playlist.currentTrack
+
+        if self.scrobbler is not None:
+            deferLater(reactor, 0, self.scrobbler.updateNowPlaying, track)
+
         event = {'event': 'TrackStarted',
                  'data': {'position': self.playlist.currentPosition,
-                          'track': self.playlist.currentTrack.meta}}
+                          'track': track.meta}}
         self.announce(event)
 
     def onPlayerStopped(self):

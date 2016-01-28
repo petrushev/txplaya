@@ -68,3 +68,4 @@ txplayagui/ui/reconnectdialog.py
 txplayagui/ui/library.py
 .library
 twistd.pid
+envs
