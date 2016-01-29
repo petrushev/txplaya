@@ -157,6 +157,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         menu.play.connect(self.onPlaylistMenuPlay)
         menu.remove.connect(self.onPlaylistMenuRemove)
         menu.clear.connect(self.onPlaylistMenuClear)
+        menu.reconnect.connect(self.reconnectDialog)
 
         globalPosition = self.playlistTable.mapToGlobal(position)
         menu.exec_(globalPosition)

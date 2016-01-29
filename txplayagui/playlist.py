@@ -88,6 +88,7 @@ class PlaylistMenu(QMenu):
     play = pyqtSignal(QModelIndex)
     remove = pyqtSignal(QModelIndex)
     clear = pyqtSignal()
+    reconnect = pyqtSignal()
 
     def __init__(self, index, parent=None):
         QMenu.__init__(self, parent)
@@ -103,6 +104,9 @@ class PlaylistMenu(QMenu):
         clear = self.addAction("Clear")
         clear.triggered.connect(self._onClear)
 
+        reconnect = self.addAction("Reconnect")
+        reconnect.triggered.connect(self._onReconnect)
+
     @pyqtSlot()
     def _onPlay(self):
         self.play.emit(self.trackIndex)
@@ -114,3 +118,7 @@ class PlaylistMenu(QMenu):
     @pyqtSlot()
     def _onClear(self):
         self.clear.emit()
+
+    @pyqtSlot()
+    def _onReconnect(self):
+        self.reconnect.emit()
