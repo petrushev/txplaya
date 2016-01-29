@@ -25,6 +25,9 @@ class Scrobbler(object):
             api_key=KEY, api_secret=SECRET, username=USER, password_hash=passHash)
 
     def _parseTrackData(self, track):
+        if track is None:
+            return None
+
         artist = track.artist
         album = track.album
         if artist == '' or album == '':
