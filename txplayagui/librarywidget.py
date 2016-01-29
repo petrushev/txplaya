@@ -63,7 +63,8 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
 
     @pyqtSlot()
     def onQueryClear(self):
-        return self.libraryModel.showAll()
+        self.querySearchBox.setText('')
+        self.querySearchBox.setFocus()
 
     def setProgress(self, value):
         self.scanProgressBar.setValue(value)
