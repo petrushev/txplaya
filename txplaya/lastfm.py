@@ -30,10 +30,14 @@ class Scrobbler(object):
 
         artist = track.artist
         album = track.album
-        if artist == '' or album == '':
+        albumArtist = track.albumArtist
+
+        if artist == '':
+            artist = albumArtist
+
+        if artist == '':
             return None
 
-        albumArtist = track.albumArtist
         if albumArtist == artist:
             albumArtist = None
 
