@@ -8,6 +8,7 @@ from txplayagui.playlist import PlaylistModel, PlaylistMenu
 from txplayagui.infostream import QInfoStream
 from txplayagui.librarywidget import LibraryWidget
 from txplayagui.reconnectdialog import ReconnectDialog
+from math import ceil
 
 # load translations
 locale = QLocale.system().name()
@@ -221,7 +222,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
         trackname = trackData['track']['trackname']
-        self.playingLabel.setText(trackname)
+        length = int(ceil(trackData['track']['length']))
+        self.trackProgressBar.setFormat(trackname)
+        self.trackProgressBar.setMaximum(length)
 
         self.playButton.hide()
         self.pauseButton.show()
@@ -230,8 +233,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot()
     def onPlaybackFinished(self):
-        self.playingLabel.setText('not playing')
-        self.timerLabel.setText('')
+        self.trackProgressBar.setFormat('not playing')
+        self.trackProgressBar.setValue(0)
 
         self.playButton.show()
         self.pauseButton.hide()
@@ -285,6 +288,4 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot(int)
     def timerUpdated(self, time):
-        min_ = int(time / 60)
-        sec = time - min_ * 60
-        self.timerLabel.setText('{0}:{1:02d}'.format(min_, sec))
+        self.trackProgressBar.setValue(time)
