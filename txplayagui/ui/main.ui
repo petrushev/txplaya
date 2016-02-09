@@ -81,6 +81,9 @@
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <item>
        <widget class="QProgressBar" name="trackProgressBar">
         <property name="value">
@@ -95,7 +98,7 @@
        <widget class="QPushButton" name="prevButton">
         <property name="minimumSize">
          <size>
-          <width>48</width>
+          <width>30</width>
           <height>0</height>
          </size>
         </property>
@@ -107,13 +110,16 @@
           <normalon>:/icons/img/prev.svg</normalon>
          </iconset>
         </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="playButton">
         <property name="minimumSize">
          <size>
-          <width>48</width>
+          <width>30</width>
           <height>0</height>
          </size>
         </property>
@@ -125,13 +131,16 @@
           <normalon>:/icons/img/play.svg</normalon>
          </iconset>
         </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pauseButton">
         <property name="minimumSize">
          <size>
-          <width>48</width>
+          <width>30</width>
           <height>0</height>
          </size>
         </property>
@@ -145,13 +154,19 @@
         <property name="checkable">
          <bool>true</bool>
         </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="stopButton">
         <property name="minimumSize">
          <size>
-          <width>48</width>
+          <width>30</width>
           <height>0</height>
          </size>
         </property>
@@ -162,13 +177,16 @@
          <iconset resource="resource.qrc">
           <normaloff>:/icons/img/stop.svg</normaloff>:/icons/img/stop.svg</iconset>
         </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="nextButton">
         <property name="minimumSize">
          <size>
-          <width>48</width>
+          <width>30</width>
           <height>0</height>
          </size>
         </property>
@@ -178,6 +196,9 @@
         <property name="icon">
          <iconset resource="resource.qrc">
           <normaloff>:/icons/img/next.svg</normaloff>:/icons/img/next.svg</iconset>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
