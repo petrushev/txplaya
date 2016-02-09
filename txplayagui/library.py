@@ -1,11 +1,11 @@
 import gc
 
+from unidecode import unidecode
+
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
 from txplayagui.utilities import mimeWrapJson, SortedDict
 
-
-# TODO : split into separate widget
 
 class LibraryItem(object):
 
@@ -114,8 +114,9 @@ class TrackItem(LibraryItem):
     def match(self, query):
         if not hasattr(self, '_cacheQueryText'):
             meta = self.mimeDataDict()
-            self._cacheQueryText = ' '.join([meta['artist'], meta['album'],
-                                             meta['albumartist'], meta['trackname']]).lower()
+            _cacheQueryText = ' '.join([meta['artist'], meta['album'],
+                                        meta['albumartist'], meta['trackname']])
+            self._cacheQueryText = unidecode(_cacheQueryText).lower()
         return query in self._cacheQueryText
 
     def albumItem(self):
@@ -261,6 +262,7 @@ class LibraryModel(QAbstractItemModel):
         return item.albumHashes()
 
     def filter(self, query):
+        query = unidecode(query).lower()
         filtered = ((artistKey, albumKey, albumItem, trackItem.row(), trackItem.match(query))
                     for artistKey, artistItem in self._artists.iteritems()
                     for albumKey, albumItem in artistItem._children.iteritems()
