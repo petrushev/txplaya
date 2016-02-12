@@ -16,6 +16,10 @@
   <property name="windowTitle">
    <string>TxPlaya</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/icons/img/library.svg</normaloff>:/icons/img/library.svg</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="acceptDrops">
     <bool>true</bool>
