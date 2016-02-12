@@ -189,7 +189,12 @@ class Stream(BaseStream):
     def __init__(self, request):
         BaseStream.__init__(self, request)
 
-        self.request.setHeader('Content-Type', 'audio/mp3')
+        self.request.setHeader('Content-Type', 'audio/mpeg')
+        self.request.setHeader('Transfer-Encoding', 'chunked')
+        self.request.setHeader('Content-Transfer-Encoding', 'binary')
+        self.request.setHeader('Accept-Ranges', 'bytes')
+        self.request.setHeader('Content-Disposition', 'inline')
+
         self.mainController.listenerRegistry.add(self)
 
         # push history to it

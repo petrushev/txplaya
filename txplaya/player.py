@@ -1,6 +1,5 @@
 from decimal import Decimal
 from collections import deque
-from math import ceil
 import gc
 from uuid import uuid4
 from operator import itemgetter
@@ -63,17 +62,12 @@ class Player(object):
         log.msg('Garbage collected %d' % bytes_)
 
     def feed(self, track):
-        rawData = track.data
+        chunks = track.dataChunks(ITER_TIME)
 
-        num_chunks = track.length * 1.0 / ITER_TIME
-        chunk_size = int(ceil(len(rawData) / num_chunks))
-
-        self.data.clear()
         self.timer = 0
+        self.data.clear()
+        self.data.extend(chunks)
 
-        while len(rawData) > 0:
-            chunk, rawData = rawData[:chunk_size], rawData[chunk_size:]
-            self.data.append(chunk)
 
     def play(self):
         if not self.playing or self.paused:
