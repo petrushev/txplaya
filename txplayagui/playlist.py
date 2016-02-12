@@ -4,19 +4,8 @@ from math import floor, ceil
 from PyQt5.QtWidgets import QMenu
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
 
-from mutagen.id3 import ID3
-
 
 class Track(object):
-
-    def __init__(self, path=None):
-        if path is None:
-            return
-        self.path = path
-        id3 = ID3(path)
-        self.id3 = {'Album': id3.get('TALB', ['']).text[0],
-                    'Artist': id3.get('TPE1', ['']).text[0],
-                    'Title': id3.get('TIT2', ['']).text[0]}
 
     @classmethod
     def fromData(cls, data):
@@ -29,6 +18,7 @@ class Track(object):
         sec = int(ceil(sec - min_ * 60))
         track.id3['Length'] = '{0}:{1:02d}'.format(min_, sec)
         return track
+
 
 class PlaylistModel(QAbstractTableModel):
 
