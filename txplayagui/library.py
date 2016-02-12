@@ -5,6 +5,7 @@ from unidecode import unidecode
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
 from txplayagui.utilities import mimeWrapJson, SortedDict
+from werkzeug.utils import cached_property
 
 
 class LibraryItem(object):
@@ -44,6 +45,7 @@ class ArtistItem(LibraryItem):
             return ' Various artists'
         return self._data
 
+    @cached_property
     def mimeDataDict(self):
         return {'albumartist': self._data}
 
@@ -60,9 +62,10 @@ class AlbumItem(LibraryItem):
             return '(%d) %s' % (year, album)
         return album
 
+    @cached_property
     def mimeDataDict(self):
         year, album = self._data
-        res = self.artistItem().mimeDataDict()
+        res = dict(self.artistItem().mimeDataDict)
         res.update({'album': album,
                     'year': year})
         return res
@@ -98,17 +101,18 @@ class TrackItem(LibraryItem):
         else:
             display = trackname
 
-        albumArtist = self.albumItem().mimeDataDict()['albumartist']
+        albumArtist = self.albumItem().mimeDataDict['albumartist']
 
         if artist != '' and artist != albumArtist:
             display = display + ' - %s' % artist
 
         return display
 
+    @cached_property
     def mimeDataDict(self):
         disc_number, tracknumber, trackname, artist = self._data
 
-        res = self.albumItem().mimeDataDict()
+        res = dict(self.albumItem().mimeDataDict)
         res.update({'trackname': trackname,
                     'discnumber': disc_number,
                     'tracknumber': tracknumber,
@@ -119,7 +123,7 @@ class TrackItem(LibraryItem):
 
     def match(self, query):
         if not hasattr(self, '_cacheQueryText'):
-            meta = self.mimeDataDict()
+            meta = self.mimeDataDict
             _cacheQueryText = ' '.join([meta['artist'], meta['album'],
                                         meta['albumartist'], meta['trackname']])
             self._cacheQueryText = unidecode(_cacheQueryText).lower()
@@ -156,7 +160,7 @@ class LibraryModel(QAbstractItemModel):
         return None
 
     def mimeData(self, indexes):
-        mimeDataDicts = [index.internalPointer().mimeDataDict() for index in indexes]
+        mimeDataDicts = [index.internalPointer().mimeDataDict for index in indexes]
         return mimeWrapJson(mimeDataDicts)
 
     def flags(self, index):
