@@ -7,15 +7,46 @@ Web based audio player build on Twisted
 Requirements
 ------------
 
-- Twisted
-- requests
-- PyQt5
-- werkzeug
-- mutagen
+  * Server
+
+    - Twisted
+    - werkzeug
+    - mutagen
+    - pylast
+
+  * Qt client
+
+    - PyQt5
+    - werkzeug
+    - unidecode
 
 
-Running
--------
+Running server
+--------------
+
+Environment variables:
+
+  - TXPLAYA_LIBPATH - path to music library, multiple paths supported. default: ~/Music
+  - TXPLAYA_BIND_ADDRESS - http address, default: localhost
+  - TXPLAYA_PORT - http port, default: 8070
+
+Optional:
+
+  - TXPLAYA_LASTFM_USER - lastfm credentials
+  - TXPLAYA_LASTFM_PASS
+  - TXPLAYA_LASTFM_KEY
+  - TXPLAYA_LASTFM_SECRET
+
+
+Start:
+
+.. code:: python
+
+    twistd -ny playaservice.py
+
+
+Running GUI:
+------------
 
 Build resource, ui and translation files:
 
@@ -23,13 +54,7 @@ Build resource, ui and translation files:
 
     ./build.sh
 
-Start server with:
-
-.. code:: python
-
-    TXPLAYA_LIBPATH="/path/to/your/music" twistd -ny playaservice.py
-
-Start client with:
+Start:
 
 .. code:: python
 
