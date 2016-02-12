@@ -91,10 +91,16 @@ class TrackItem(LibraryItem):
         if disc_number and self.albumItem().discCount() > 1:
             display = '%d/' % disc_number
         if tracknumber:
-            display = display + '%d. ' % tracknumber
+            display = display + '%d.' % tracknumber
 
-        display = display + trackname
-        if artist != '':
+        if display != '':
+            display = display + ' ' + trackname
+        else:
+            display = trackname
+
+        albumArtist = self.albumItem().mimeDataDict()['albumartist']
+
+        if artist != '' and artist != albumArtist:
             display = display + ' - %s' % artist
 
         return display
