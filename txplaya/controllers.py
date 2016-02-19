@@ -76,27 +76,24 @@ class PlaylistManager(BaseController):
     def getData(self):
         return {'playlist': self.playlistData}
 
-    def _insert(self, filepath):
-        if not self.mainController.library.pathExists(filepath):
-            self.request.setResponseCode(http.NOT_FOUND)
-            return {'err': 'Track not in library',
-                    'playlist': self.playlistData}
+    def _insert(self, filepaths):
+        for filepath in filepaths:
+            if not self.mainController.library.pathExists(filepath):
+                continue
+            track = Track(filepath)
+            self.mainController.playlist.insert(track, self.positionArg)
 
-        track = Track(filepath)
-        self.mainController.playlist.insert(track, self.positionArg)
-        return {'msg': 'Track added',
-                'playlist': self.playlistData}
+        return {'msg': 'Tracks added'}
 
     def insert(self):
         filepath = '/' + url_unquote(self.filepathArg)
-        return self._insert(filepath)
+        return self._insert([filepath])
 
     def libraryInsert(self):
         trackIds = self.trackIdsArg.split(',')
-        trackId = trackIds[0]
-        # TODO : support multiple tracks
-        filepath = txplaya.library.Library.decodePath(trackId)
-        return self._insert(filepath)
+        filepaths = [txplaya.library.Library.decodePath(trackId)
+                     for trackId in trackIds]
+        return self._insert(filepaths)
 
     def remove(self):
         try:
