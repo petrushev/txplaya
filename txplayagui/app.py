@@ -1,7 +1,7 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
+from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt
 
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, PlaylistMenu
@@ -289,3 +289,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(int)
     def timerUpdated(self, time):
         self.trackProgressBar.setValue(time)
+
+    def keyReleaseEvent(self, event):
+        result = QMainWindow.keyReleaseEvent(self, event)
+
+        if event.modifiers() == Qt.ControlModifier and event.key() == 70:
+            # Ctrl + F, focus searh in library
+            self.library.querySearchBox.setFocus()
+            self.library.querySearchBox.selectAll()
+
+        if event.modifiers() == Qt.NoModifier and event.key() == 32:
+            # Space, toggle playback
+            if QApplication.focusWidget() != self.library.querySearchBox:
+                if self.pauseButton.isVisible():
+                    self.onPauseClicked()
+                else:
+                    self.onPlaySelected()
+
+        return result
