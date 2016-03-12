@@ -1,7 +1,6 @@
 from os.path import dirname, abspath
 from os.path import join as path_join
-from os import environ, walk
-from os import pathsep
+from os import environ, walk, pathsep, stat
 from zlib import compress, decompress
 import json
 from base64 import urlsafe_b64encode, urlsafe_b64decode
@@ -59,8 +58,12 @@ class Library(object):
     def scanFiles(self, dirpath, filenames):
         for filename in filenames:
             path_ = path_join(dirpath, filename)
-            track = Track(path_)
 
+            size = stat(path_).st_size / 1000 # kB
+            if size < 100 or size > 100000:
+                continue
+
+            track = Track(path_)
             if not track.has_tags or track.trackName == '':
                 continue
 
