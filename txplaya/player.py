@@ -4,6 +4,7 @@ import gc
 from uuid import uuid4
 from operator import itemgetter
 import json
+from datetime import datetime
 
 from twisted.internet import reactor
 from twisted.internet.task import deferLater
@@ -61,13 +62,14 @@ class Player(object):
         bytes_ = gc.collect()
         log.msg('Garbage collected %d' % bytes_)
 
-    def feed(self, track):
+    def feed(self, track, clear=False):
         chunks = track.dataChunks(ITER_TIME)
 
-        self.timer = 0
-        self.data.clear()
-        self.data.extend(chunks)
+        self.timeStarted = datetime.utcnow()
 
+        if clear:
+            self.data.clear()
+        self.data.extend(chunks)
 
     def play(self):
         if not self.playing or self.paused:
@@ -91,8 +93,7 @@ class Player(object):
         self.onPush(buf)
 
         # update timer
-        self.timer = self.timer + ITER_TIME
-        self.onTimerUpdate()
+        self.onTimerUpdate(datetime.utcnow() - self.timeStarted)
 
     def start(self):
         if len(self.data) == 0:
@@ -312,7 +313,7 @@ class MainController(object):
 
         self.onPlaybackStarted()
 
-        self.player.feed(self.playlist.currentTrack)
+        self.player.feed(self.playlist.currentTrack, clear=False)
         self.player.start()
 
     def onPlaybackStarted(self):
@@ -359,7 +360,7 @@ class MainController(object):
 
         self.announce(event)
 
-    def onTimerUpdate(self):
+    def onTimerUpdate(self, elapsed):
         event = {'event': 'TimerUpdate',
-                 'data': {'time': self.player.timer}}
+                 'data': {'time': int(elapsed.seconds)}}
         self.announce(event)

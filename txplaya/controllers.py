@@ -152,7 +152,7 @@ class Player(BaseController):
 
         player = self.mainController.player
 
-        player.feed(self.mainController.playlist.currentTrack)
+        player.feed(self.mainController.playlist.currentTrack, clear=True)
         player.start()
 
         return {'msg': 'Started'}
