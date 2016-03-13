@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pylast
 
+from twisted.internet.threads import deferToThread
+
 
 USER = environ.get('TXPLAYA_LASTFM_USER')
 PASS = environ.get('TXPLAYA_LASTFM_PASS')
@@ -21,8 +23,27 @@ class Scrobbler(object):
 
     def __init__(self):
         passHash = pylast.md5(PASS)
-        self.network = pylast.LastFMNetwork(
-            api_key=KEY, api_secret=SECRET, username=USER, password_hash=passHash)
+        self.network = None
+
+        d = deferToThread(pylast.LastFMNetwork,
+                api_key=KEY, api_secret=SECRET, username=USER, password_hash=passHash)
+        d.addCallback(self.onNetworkInitialized)
+        d.addErrback(self.onNetworkError)
+
+    def onNetworkInitialized(self, network):
+        self.network = network
+
+    def onSuccess(self, *args, **kwargs):
+        pass
+
+    def onNetworkError(self, failure):
+        failure.printTraceback()
+
+    def deferToThread(self, func, *args, **kwargs):
+        d = deferToThread(func, *args, **kwargs)
+        d.addCallback(self.onSuccess)
+        d.addErrback(self.onNetworkError)
+        return d
 
     def _parseTrackData(self, track):
         if track is None:
@@ -56,8 +77,8 @@ class Scrobbler(object):
         
         timestamp = datetime.utcnow()
 
-        self.network.scrobble(artist, trackName, timestamp,
-                              album, albumArtist, trackNumber)
+        self.deferToThread(self.network.scrobble,
+            artist, trackName, timestamp, album, albumArtist, trackNumber)
 
     def updateNowPlaying(self, track):
         data = self._parseTrackData(track)
@@ -65,6 +86,6 @@ class Scrobbler(object):
             return
 
         artist, trackName, album, albumArtist, trackNumber = data
-        
-        self.network.update_now_playing(artist, trackName, album, albumArtist,
-            track_number=trackNumber)
+
+        self.deferToThread(self.network.update_now_playing,
+            artist, trackName, album, albumArtist, track_number=trackNumber)
