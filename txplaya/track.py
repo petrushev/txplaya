@@ -93,7 +93,7 @@ class Track(object):
     def dataChunks(self, iterTime):
         type_ = self.meta.get('type')
         if type_ == 'mp3':
-            prebufTime = 2.0
+            prebufTime = 0.3
         elif type_ == 'm4a':
             prebufTime = 70.0
         else:
@@ -101,22 +101,22 @@ class Track(object):
 
         rawData = self.data
 
-        numChunks = self.length * 1.0 / iterTime
+        prebufSize = len(rawData) * prebufTime / self.length
+        prebufSize = int(ceil(prebufSize))
+        prebufChunk, rawData = rawData[:prebufSize], rawData[prebufSize:]
+
+        remainingLenght = self.length - prebufTime
+
+        numChunks = remainingLenght * 1.0 / iterTime
         chunkSize = int(ceil(len(rawData) / numChunks))
 
-        chunks = []
+        chunks = [prebufChunk]
 
         while len(rawData) > 0:
             chunk, rawData = rawData[:chunkSize], rawData[chunkSize:]
             chunks.append(chunk)
 
         del rawData
-
-        numPrebufChunks = int(ceil(prebufTime / iterTime))
-
-        prebufChunk, chunks = chunks[:numPrebufChunks], chunks[numPrebufChunks:]
-        prebufChunk = ''.join(prebufChunk)
-        chunks.insert(0, prebufChunk)
 
         return chunks
 
