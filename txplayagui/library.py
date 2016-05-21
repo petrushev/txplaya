@@ -1,11 +1,11 @@
 import gc
 
 from unidecode import unidecode
+from werkzeug.utils import cached_property
 
 from PyQt5.QtCore import QAbstractItemModel, QModelIndex, Qt, pyqtSignal
 
 from txplayagui.utilities import mimeWrapJson, SortedDict
-from werkzeug.utils import cached_property
 
 
 class LibraryItem(object):
@@ -53,6 +53,25 @@ class ArtistItem(LibraryItem):
         LibraryItem.clear(self)
         self.model = None
 
+    def getAlbum(self, album):
+        if album in self._children:
+            albumItem = self._children[album]
+        else:
+            albumItem = AlbumItem(album)
+            albumItem._parent = self
+            self._children[album] = albumItem
+
+        return albumItem
+
+    def removeAlbum(self, album):
+        albumItem = self._children[album]
+        albumItem._parent = None
+        del self._children[album]
+        del albumItem
+
+        if len(self._children) == 0:
+            self.model.removeArtist(self._data)
+
 
 class AlbumItem(LibraryItem):
 
@@ -85,6 +104,15 @@ class AlbumItem(LibraryItem):
 
         return self._discCount
 
+    def removeTrack(self, track):
+        trackItem = self._children[track]
+        trackItem._parent = None
+        del self._children[track]
+        del trackItem
+
+        if len(self._children) == 0:
+            albumkey = self._data
+            self.artistItem().removeAlbum(albumkey)
 
 class TrackItem(LibraryItem):
 
@@ -121,13 +149,16 @@ class TrackItem(LibraryItem):
                     'hash': self.hash})
         return res
 
+    @cached_property
+    def _queryText(self):
+        meta = self.mimeDataDict
+        queryText = ' '.join([meta['artist'], meta['album'], meta['albumartist'],
+                              meta['trackname'], str(meta['year'])])
+        queryText = unidecode(queryText).lower()
+        return queryText
+
     def match(self, query):
-        if not hasattr(self, '_cacheQueryText'):
-            meta = self.mimeDataDict
-            _cacheQueryText = ' '.join([meta['artist'], meta['album'],
-                                        meta['albumartist'], meta['trackname']])
-            self._cacheQueryText = unidecode(_cacheQueryText).lower()
-        return query in self._cacheQueryText
+        return query in self._queryText
 
     def albumItem(self):
         return self._parent
@@ -189,44 +220,51 @@ class LibraryModel(QAbstractItemModel):
 
         return self.createIndex(row, column, item)
 
+    def getArtist(self, artist):
+        albumartistkey = artist
+        if albumartistkey.lower().startswith('the '):
+            albumartistkey = artist[4:]
+
+        if albumartistkey in self._artists:
+            artistItem = self._artists[albumartistkey]
+        else:
+            artistItem = ArtistItem(artist)
+            artistItem.model = self
+            self._artists[albumartistkey] = artistItem
+
+        return albumartistkey, artistItem
+
+    def removeArtist(self, artist):
+        artistItem = self._children[artist]
+        artistItem.model = None
+        del self._children[artist]
+        del artistItem
+
     def loadData(self, libraryData):
         self.beginResetModel()
 
+        # clear library tree
         while self._artists:
             _, artistItem = self._artists.popitem()
             artistItem.clear()
-
-        gc.collect()
+            del artistItem
 
         # fill new
         for hash_, meta in libraryData.iteritems():
 
             albumartist = meta['albumartist']
+            artist = meta['artist']
             album = (meta['year'], meta['album'])
             track = (meta['discnumber'], meta['tracknumber'], meta['trackname'])
 
-            if albumartist != meta['artist']:
-                track = track + (meta['artist'],)
+            if albumartist != artist:
+                track = track + (artist,)
             else:
                 track = track + ('',)
 
-            albumartistkey = albumartist
-            if albumartistkey.lower().startswith('the '):
-                albumartistkey = albumartist[4:]
+            _albumArtistKey, artistItem = self.getArtist(albumartist)
 
-            if albumartistkey in self._artists:
-                artistItem = self._artists[albumartistkey]
-            else:
-                artistItem = ArtistItem(albumartist)
-                artistItem.model = self
-                self._artists[albumartistkey] = artistItem
-
-            if album in artistItem._children:
-                albumItem = artistItem._children[album]
-            else:
-                albumItem = AlbumItem(album)
-                albumItem._parent = artistItem
-                artistItem._children[album] = albumItem
+            albumItem = artistItem.getAlbum(album)
 
             if track not in albumItem._children:
                 trackItem = TrackItem(track)
@@ -244,23 +282,28 @@ class LibraryModel(QAbstractItemModel):
                 if '' in albumArtists:
                     albumArtists.remove('')
 
-                if len(albumArtists) == 1:
-                    newAlbumArtist = tuple(albumArtists)[0]
-                    del variousArtist._children[album]
+                if len(albumArtists) > 1:
+                    # album has multiple artists
+                    continue
 
-                    newAlbumArtistKey = newAlbumArtist
-                    if newAlbumArtistKey.lower().startswith('the '):
-                        newAlbumArtistKey = newAlbumArtistKey[4:]
+                # album has one artist
+                newAlbumArtist = tuple(albumArtists)[0]
+                newAlbumItem = self.getArtist(newAlbumArtist)[1].getAlbum(album)
 
-                    if newAlbumArtistKey in self._artists:
-                        artistItem = self._artists[newAlbumArtistKey]
-                    else:
-                        artistItem = ArtistItem(newAlbumArtist)
-                        artistItem.model = self
-                        self._artists[newAlbumArtistKey] = artistItem
+                for track, trackItem in albumItem._children.items():
+                    newTrack = track[:-1] + ('',)
 
-                    artistItem._children[album] = albumItem
-                    albumItem._parent = artistItem
+                    if newTrack not in newAlbumItem._children:
+                        newTrackItem = TrackItem(newTrack)
+                        newTrackItem.hash = trackItem.hash
+                        newTrackItem.length = trackItem.length
+                        newTrackItem._parent = newAlbumItem
+
+                        newAlbumItem._children[newTrack] = newTrackItem
+
+                    albumItem.removeTrack(track)
+
+        gc.collect()
 
         self.endResetModel()
 
