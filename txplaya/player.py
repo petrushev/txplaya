@@ -13,8 +13,8 @@ from twisted.python import log
 from txplaya.library import Library
 from txplaya.lastfm import getScrobbler
 
-ITER_TIME = 1.0
-HISTORY_CHUNKS = 1
+ITER_TIME = 0.2
+HISTORY_CHUNKS = 2
 
 
 itemgetter0 = itemgetter(0)
@@ -150,10 +150,14 @@ class Playlist(object):
     _order = {}
     _currentUid = None
 
-    def iterTrack(self):
+    def iterTrackUid(self):
         keys = sorted(self._order.keys())
         for dposition in keys:
             trackUid = self._order[dposition]
+            yield trackUid
+
+    def iterTrack(self):
+        for trackUid in self.iterTrackUid():
             yield self._reg[trackUid]
 
     def insert(self, track, position=None, trackUid=None, emit=True):
@@ -275,6 +279,16 @@ class Playlist(object):
 
     def onChanged(self):
         log.err('Playlist not attached')
+
+    def save(self, name, trackPaths=None):
+        from txplaya.playlistregistry import playlistRegistry
+        if trackPaths is None:
+            trackPaths = [track._path for track in self.iterTrack()]
+        playlistRegistry.savePlaylist(name, trackPaths)
+
+    def load(self, name):
+        from txplaya.playlistregistry import playlistRegistry
+        return playlistRegistry.loadPlaylist(name)
 
 
 class MainController(object):

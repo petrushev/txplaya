@@ -76,7 +76,7 @@ class Track(object):
             try:
                 mp4 = MP4(self._path)
             except Exception:
-                print 'no id3, no m4a', repr(self._path[-10:])
+                pass
             else:
                 self._meta.update(_parseMp4(mp4.tags))
         else:

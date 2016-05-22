@@ -50,7 +50,7 @@ class BaseStream(BaseController):
 class PlaylistManager(BaseController):
 
     def __init__(self, request, action, filepath='', position=None, start=None, end=None,
-                 trackIds=''):
+                 trackIds='', playlistName=''):
         BaseController.__init__(self, request)
 
         self.positionArg = position
@@ -58,6 +58,7 @@ class PlaylistManager(BaseController):
         self.startArg = start
         self.endArg = end
         self.trackIdsArg = trackIds
+        self.playlistNameArg = playlistName
 
         self.request.setResponseCode(http.OK)
 
@@ -120,6 +121,23 @@ class PlaylistManager(BaseController):
         self.mainController.playlist.clear()
         return {'msg': 'Playlist cleared',
                 'playlist': self.playlistData}
+
+    def save(self):
+        from txplaya.playlistregistry import playlistRegistry
+        playlistName = url_unquote(self.playlistNameArg)
+        self.mainController.playlist.save(playlistName)
+
+        event = {'event': 'PlaylistRegistryUpdated',
+                 'data': {'list': playlistRegistry.list_()}}
+        self.mainController.announce(event)
+
+        return {'msg': 'Playlist saved'}
+
+    def load(self):
+        playlistName = url_unquote(self.playlistNameArg)
+        trackPaths = self.mainController.playlist.load(playlistName)
+
+        return self._insert(trackPaths)
 
 
 class Player(BaseController):
@@ -267,6 +285,8 @@ class Library(BaseController):
 class InfoStream(BaseStream):
 
     def __init__(self, request):
+        from playlistregistry import playlistRegistry
+
         BaseStream.__init__(self, request)
 
         self.request.setHeader('Content-Type', 'text/plain')
@@ -294,6 +314,11 @@ class InfoStream(BaseStream):
                         for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
                  'data': {'playlist': playlistData}}
+        self.write(json.dumps(event) + '\n')
+
+        # push list of playlists
+        event = {'event': 'PlaylistRegistryUpdated',
+                 'data': {'list': playlistRegistry.list_()}}
         self.write(json.dumps(event) + '\n')
 
     def onConnectionLost(self, reason):
