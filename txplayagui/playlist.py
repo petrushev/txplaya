@@ -1,7 +1,7 @@
 import json
 from math import floor, ceil
 
-from PyQt5.QtWidgets import QMenu
+from PyQt5.QtWidgets import QMenu, QInputDialog
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
 
 
@@ -73,14 +73,16 @@ class PlaylistModel(QAbstractTableModel):
     def isPlaying(self, index):
         return index.row() == self.currentPosition
 
+
 class PlaylistMenu(QMenu):
 
     play = pyqtSignal(QModelIndex)
     remove = pyqtSignal(QModelIndex)
     clear = pyqtSignal()
+    save = pyqtSignal(unicode)
     reconnect = pyqtSignal()
 
-    def __init__(self, index, parent=None):
+    def __init__(self, index, isPlaylistEmpty, parent=None):
         QMenu.__init__(self, parent)
 
         self.trackIndex = index
@@ -91,8 +93,12 @@ class PlaylistMenu(QMenu):
             remove = self.addAction("Remove")
             remove.triggered.connect(self._onRemove)
         
-        clear = self.addAction("Clear")
-        clear.triggered.connect(self._onClear)
+        if not isPlaylistEmpty:
+            clear = self.addAction("Clear")
+            clear.triggered.connect(self._onClear)
+
+            save = self.addAction("Save")
+            save.triggered.connect(self._onSave)
 
         reconnect = self.addAction("Reconnect")
         reconnect.triggered.connect(self._onReconnect)
@@ -112,3 +118,9 @@ class PlaylistMenu(QMenu):
     @pyqtSlot()
     def _onReconnect(self):
         self.reconnect.emit()
+
+    @pyqtSlot()
+    def _onSave(self):
+        playlistName, accepted = QInputDialog.getText(self, 'Save playlist', 'Playlist name:')
+        if accepted:
+            self.save.emit(playlistName)

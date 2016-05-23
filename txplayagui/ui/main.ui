@@ -251,6 +251,19 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QPushButton" name="togglePlaylistsButton">
+        <property name="text">
+         <string>Playlists</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>
@@ -276,6 +289,18 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="libraryDockContent"/>
+  </widget>
+  <widget class="QDockWidget" name="playlistsDock">
+   <property name="features">
+    <set>QDockWidget::NoDockWidgetFeatures</set>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::RightDockWidgetArea</set>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="playlistDockContent"/>
   </widget>
  </widget>
  <resources>

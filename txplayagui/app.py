@@ -1,4 +1,5 @@
 import json
+from math import ceil
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt
@@ -8,7 +9,7 @@ from txplayagui.playlist import PlaylistModel, PlaylistMenu
 from txplayagui.infostream import QInfoStream
 from txplayagui.librarywidget import LibraryWidget
 from txplayagui.reconnectdialog import ReconnectDialog
-from math import ceil
+from txplayagui.playlistswidget import PlaylistsWidget
 
 # load translations
 locale = QLocale.system().name()
@@ -42,12 +43,19 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.prevButton.clicked.connect(self.onPrevClicked)
 
         self.libraryDock.setTitleBarWidget(QWidget())
+        self.playlistsDock.setTitleBarWidget(QWidget())
         self.toggleLibraryButton.clicked.connect(self.onToggleLibrary)
+        self.togglePlaylistsButton.clicked.connect(self.onTogglePlaylists)
 
         self.library = LibraryWidget(self)
         self.libraryDock.setWidget(self.library)
         self.library.rescanStarted.connect(self.onLibraryRescanStarted)
         self.library.itemsActivated.connect(self.onLibraryItemActivated)
+
+        self.playlists = PlaylistsWidget(self)
+        self.playlistsDock.setWidget(self.playlists)
+        self.playlistsDock.hide()
+        self.playlists.loadPlaylist.connect(self.onPlaylistLoad)
 
         self.infoStreamStart()
         QTimer.singleShot(200, self.fetchLibrary)
@@ -60,6 +68,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
         self.infoStream.disconnected.connect(self.reconnectDialog)
         self.infoStream.timerUpdated.connect(self.timerUpdated)
+        self.infoStream.playlistRegistryUpdated.connect(self.playlistRegistryUpdated)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
@@ -153,12 +162,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(QPoint)
     def playlistContextMenu(self, position):
         index = self.playlistTable.indexAt(position)
+        isPlaylistEmpty = (self.playlistModel.rowCount() == 0)
 
-        menu = PlaylistMenu(index)
+        menu = PlaylistMenu(index, isPlaylistEmpty)
         menu.play.connect(self.onPlaylistMenuPlay)
         menu.remove.connect(self.onPlaylistMenuRemove)
         menu.clear.connect(self.onPlaylistMenuClear)
         menu.reconnect.connect(self.reconnectDialog)
+        menu.save.connect(self.onPlaylistSave)
 
         globalPosition = self.playlistTable.mapToGlobal(position)
         menu.exec_(globalPosition)
@@ -215,9 +226,25 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(bool)
     def onToggleLibrary(self, show):
         if show:
+            self.playlistsDock.hide()
+            self.togglePlaylistsButton.setChecked(False)
+
             self.libraryDock.show()
+
         else:
             self.libraryDock.hide()
+
+    @pyqtSlot(bool)
+    def onTogglePlaylists(self, show):
+        if show:
+            self.libraryDock.hide()
+            self.toggleLibraryButton.setChecked(False)
+
+            self.playlistsDock.show()
+
+        else:
+            self.playlistsDock.hide()
+
 
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
@@ -274,6 +301,20 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onLibraryItemActivated(self, hashes):
         from txplayagui.client import libraryInsert
         _ = libraryInsert(hashes)
+
+    @pyqtSlot(list)
+    def playlistRegistryUpdated(self, list_):
+        self.playlists.update(list_)
+
+    @pyqtSlot(unicode)
+    def onPlaylistLoad(self, playlistName):
+        from txplayagui.client import loadPlaylist
+        _ = loadPlaylist(playlistName)
+
+    @pyqtSlot(unicode)
+    def onPlaylistSave(self, playlistName):
+        from txplayagui.client import savePlaylist
+        _ = savePlaylist(playlistName)
 
     @pyqtSlot()
     def reconnectDialog(self):

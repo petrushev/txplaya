@@ -160,3 +160,11 @@ def infostream():
     rq = QStreamRequest(url)
     rq.get()
     return rq
+
+def loadPlaylist(name):
+    url = baseUrl() + '/playlist/load/' + url_quote(name)
+    return _requestGet(url)
+
+def savePlaylist(name):
+    url = baseUrl() + '/playlist/save/' + url_quote(name)
+    return _requestGet(url)

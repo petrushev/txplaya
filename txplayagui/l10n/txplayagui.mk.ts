@@ -30,5 +30,18 @@
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../ui/main.ui" line="257"/>
+        <source>Playlists</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PlaylistsWidget</name>
+    <message>
+        <location filename="../ui/playlists.ui" line="14"/>
+        <source>Playlists</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

@@ -12,6 +12,7 @@ class QInfoStream(QObject):
     playlistChanged = pyqtSignal(object)
     disconnected = pyqtSignal()
     timerUpdated = pyqtSignal(int)
+    playlistRegistryUpdated = pyqtSignal(object)
 
     def __init__(self):
         QObject.__init__(self)
@@ -43,6 +44,10 @@ class QInfoStream(QObject):
         elif event == 'TimerUpdate':
             time = int(ceil(data['time']))
             self.timerUpdated.emit(time)
+
+        elif event == 'PlaylistRegistryUpdated':
+            list_ = data['list']
+            self.playlistRegistryUpdated.emit(list_)
 
         else:
             print 'Infostream: %s event not implemented' % event
