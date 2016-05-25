@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>img/playlist.svg</file>
     <file>img/reconnect.svg</file>
     <file>img/dialog_close.svg</file>
     <file>img/clear_text.svg</file>

@@ -31,7 +31,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="257"/>
+        <location filename="../ui/main.ui" line="263"/>
         <source>Playlists</source>
         <translation type="unfinished"></translation>
     </message>

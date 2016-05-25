@@ -253,14 +253,24 @@
       </item>
       <item>
        <widget class="QPushButton" name="togglePlaylistsButton">
-        <property name="text">
+        <property name="minimumSize">
+         <size>
+          <width>48</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
          <string>Playlists</string>
+        </property>
+        <property name="icon">
+         <iconset resource="resource.qrc">
+          <normaloff>:/icons/img/playlist.svg</normaloff>:/icons/img/playlist.svg</iconset>
         </property>
         <property name="checkable">
          <bool>true</bool>
         </property>
         <property name="flat">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
        </widget>
       </item>
