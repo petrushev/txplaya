@@ -160,8 +160,7 @@ class Playlist(object):
         for trackUid in self.iterTrackUid():
             yield self._reg[trackUid]
 
-    def insert(self, track, position=None, trackUid=None, emit=True):
-
+    def insert(self, track, position=None, emit=True):
         if self._reg == {}:
             dposition = Decimal(1)
 
@@ -175,12 +174,8 @@ class Playlist(object):
             keys = sorted(self._order.keys())
             dposition = (keys[position - 1] + keys[position]) / 2
 
-        if trackUid is None:
-            # track does not exist in the playlist yet
-            trackUid = uuid4()
-
+        trackUid = uuid4()
         self._reg[trackUid] = track
-
         self._order[dposition] = trackUid
 
         if emit:
@@ -200,23 +195,26 @@ class Playlist(object):
         if emit:
             self.onChanged()
 
-    def move(self, origin, target):
+    def move(self, origin, target, emit=True):
         if origin == target or origin + 1 == target:
             return
 
         keys = sorted(self._order.keys())
-        dposition = keys[origin]
-        trackUid = self._order[dposition]
-        track = self._reg[trackUid]
+        dpositionOrigin = keys[origin]
+        trackUid = self._order[dpositionOrigin]
 
-        self.remove(origin, emit=False)
-
-        if origin > target:
-            self.insert(track, target, trackUid, emit=False)
+        if target == 0:
+            dpositionTarget = keys[0] / 2
+        elif target >= len(self._order):
+            dpositionTarget = max(self._order.keys()) + 1
         else:
-            self.insert(track, target - 1, trackUid, emit=False)
+            dpositionTarget = (keys[target] + keys[target - 1]) / 2
 
-        self.onChanged()
+        del self._order[dpositionOrigin]
+        self._order[dpositionTarget] = trackUid
+
+        if emit:
+            self.onChanged()
 
     def clear(self):
         self._order.clear()
