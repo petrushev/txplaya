@@ -34,7 +34,7 @@ class QBaseRequest(QObject):
         self.response.close()
         self.response.deleteLater()
 
-    @pyqtSlot(int)
+    @pyqtSlot(QNetworkReply.NetworkError)
     def _onError(self, code):
         if code != QNetworkReply.NoError:
             self.error.emit(code)
