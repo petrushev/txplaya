@@ -235,9 +235,12 @@ class LibraryModel(QAbstractItemModel):
         return albumartistkey, artistItem
 
     def removeArtist(self, artist):
-        artistItem = self._children[artist]
+        if artist.lower().startswith('the '):
+            artist = artist[4:]
+
+        artistItem = self._artists[artist]
         artistItem.model = None
-        del self._children[artist]
+        del self._artists[artist]
         del artistItem
 
     def loadData(self, libraryData):
@@ -302,6 +305,28 @@ class LibraryModel(QAbstractItemModel):
                         newAlbumItem._children[newTrack] = newTrackItem
 
                     albumItem.removeTrack(track)
+
+        # put one-track artists under various
+        for artist, artistItem in self._artists.items():
+            if artistItem == variousArtist or len(artistItem._children) > 1:
+                continue
+            album, albumItem = artistItem._children.items()[0]
+            if len(albumItem._children) > 1:
+                continue
+
+            track, trackItem = albumItem._children.items()[0]
+            newTrack = track[:-1] + (artist,)
+            newAlbumItem = variousArtist.getAlbum(album)
+
+            if newTrack not in newAlbumItem._children:
+                newTrackItem = TrackItem(newTrack)
+                newTrackItem.hash = trackItem.hash
+                newTrackItem.length = trackItem.length
+                newTrackItem._parent = newAlbumItem
+
+                newAlbumItem._children[newTrack] = newTrackItem
+
+            albumItem.removeTrack(track)
 
         gc.collect()
 
