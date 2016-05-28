@@ -333,6 +333,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.trackProgressBar.setValue(time)
 
     def keyReleaseEvent(self, event):
+        from txplayagui.client import remove
+
         result = QMainWindow.keyReleaseEvent(self, event)
 
         if event.modifiers() == Qt.ControlModifier and event.key() == 70:
@@ -347,5 +349,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     self.onPauseClicked()
                 else:
                     self.onPlaySelected()
+
+        selectedIndexes = self.playlistTable.selectedIndexes()
+        if event.key() == 16777223 \
+            and QApplication.focusWidget() == self.playlistTable \
+            and len(selectedIndexes) > 0:
+
+            _ = remove(selectedIndexes[0].row())
 
         return result
