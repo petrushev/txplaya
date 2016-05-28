@@ -223,6 +223,16 @@
        </spacer>
       </item>
       <item>
+       <widget class="QLabel" name="playlistLengthLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="toggleLibraryButton">
         <property name="minimumSize">
          <size>

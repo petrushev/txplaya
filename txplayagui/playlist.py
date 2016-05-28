@@ -13,7 +13,8 @@ class Track(object):
         track.id3 = {'Album': data['album'],
                      'Title': data['trackname'],
                      'Artist': data['artist']}
-        sec = data['length']
+        track.length = data['length']
+        sec = track.length
         min_ = int(floor(sec/60))
         sec = int(ceil(sec - min_ * 60))
         track.id3['Length'] = '{0}:{1:02d}'.format(min_, sec)
@@ -72,6 +73,12 @@ class PlaylistModel(QAbstractTableModel):
 
     def isPlaying(self, index):
         return index.row() == self.currentPosition
+
+    def fullLength(self):
+        sec = sum([track.length for track in self._tracks])
+        min_ = int(floor(sec/60))
+        sec = int(ceil(sec - min_ * 60))
+        return '{0}:{1:02d}'.format(min_, sec)
 
 
 class PlaylistMenu(QMenu):

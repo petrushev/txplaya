@@ -26,12 +26,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="234"/>
+        <location filename="../ui/main.ui" line="244"/>
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="263"/>
+        <location filename="../ui/main.ui" line="273"/>
         <source>Playlists</source>
         <translation type="unfinished"></translation>
     </message>

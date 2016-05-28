@@ -278,6 +278,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(object)
     def onPlaylistChanged(self, data):
         self.playlistModel.updateAll(data['playlist'])
+        self.playlistLengthLabel.setText(self.playlistModel.fullLength())
 
     @pyqtSlot()
     def onLibraryRescanStarted(self):
