@@ -139,6 +139,17 @@ class PlaylistManager(BaseController):
 
         return self._insert(trackPaths)
 
+    def delete(self):
+        from txplaya.playlistregistry import playlistRegistry
+        playlistName = url_unquote(self.playlistNameArg)
+        playlistRegistry.deletePlaylist(playlistName)
+
+        event = {'event': 'PlaylistRegistryUpdated',
+                 'data': {'list': playlistRegistry.list_()}}
+        self.mainController.announce(event)
+
+        return {'msg': 'Playlist deleted'}
+
 
 class Player(BaseController):
 

@@ -47,5 +47,12 @@ class PlaylistRegistry(object):
         except KeyError:
             return []
 
+    def deletePlaylist(self, name):
+        try:
+            del self._reg[name]
+        except KeyError:
+            pass
+        else:
+            self.save()
 
 playlistRegistry = PlaylistRegistry()
