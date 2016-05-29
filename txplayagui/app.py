@@ -333,28 +333,38 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.trackProgressBar.setValue(time)
 
     def keyReleaseEvent(self, event):
-        from txplayagui.client import remove
+        from txplayagui.client import remove, deletePlaylist
 
         result = QMainWindow.keyReleaseEvent(self, event)
+        focusWidget = QApplication.focusWidget()
 
         if event.modifiers() == Qt.ControlModifier and event.key() == 70:
             # Ctrl + F, focus searh in library
             self.library.querySearchBox.setFocus()
             self.library.querySearchBox.selectAll()
 
-        if event.modifiers() == Qt.NoModifier and event.key() == 32:
+        elif event.modifiers() == Qt.NoModifier and event.key() == 32:
             # Space, toggle playback
-            if QApplication.focusWidget() != self.library.querySearchBox:
+            if focusWidget != self.library.querySearchBox:
                 if self.pauseButton.isVisible():
                     self.onPauseClicked()
                 else:
                     self.onPlaySelected()
 
-        selectedIndexes = self.playlistTable.selectedIndexes()
-        if event.key() == 16777223 \
-            and QApplication.focusWidget() == self.playlistTable \
-            and len(selectedIndexes) > 0:
+        elif event.modifiers() == Qt.NoModifier and event.key() == 16777223:
+            # Del key
 
-            _ = remove(selectedIndexes[0].row())
+            if focusWidget == self.playlistTable:
+                # delete item in playlist
+                selectedIndexes = self.playlistTable.selectedIndexes()
+                if len(selectedIndexes) > 0:
+                    _ = remove(selectedIndexes[0].row())
+
+            elif focusWidget == self.playlists.view:
+                # delete playlist from registry
+                selectedIndexes = self.playlists.view.selectedIndexes()
+                if len(selectedIndexes) > 0:
+                    playlistName = selectedIndexes[0].data()
+                    _ = deletePlaylist(playlistName)
 
         return result

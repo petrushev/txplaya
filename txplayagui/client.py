@@ -168,3 +168,7 @@ def loadPlaylist(name):
 def savePlaylist(name):
     url = baseUrl() + '/playlist/save/' + url_quote(name)
     return _requestGet(url)
+
+def deletePlaylist(name):
+    url = baseUrl() + '/playlist/delete/' + url_quote(name)
+    return _requestGet(url)
