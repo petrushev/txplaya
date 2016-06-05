@@ -164,12 +164,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         index = self.playlistTable.indexAt(position)
         isPlaylistEmpty = (self.playlistModel.rowCount() == 0)
 
-        menu = PlaylistMenu(index, isPlaylistEmpty)
+        menu = PlaylistMenu(index, isPlaylistEmpty,
+                            self.playlistModel.hasUndo, self.playlistModel.hasRedo)
         menu.play.connect(self.onPlaylistMenuPlay)
         menu.remove.connect(self.onPlaylistMenuRemove)
         menu.clear.connect(self.onPlaylistMenuClear)
         menu.reconnect.connect(self.reconnectDialog)
         menu.save.connect(self.onPlaylistSave)
+        menu.undo.connect(self.onPlaylistUndo)
+        menu.redo.connect(self.onPlaylistRedo)
 
         globalPosition = self.playlistTable.mapToGlobal(position)
         menu.exec_(globalPosition)
@@ -191,6 +194,16 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(QModelIndex)
     def onPlaylistDoubleClick(self, index):
         self._play(index)
+
+    @pyqtSlot()
+    def onPlaylistUndo(self):
+        from txplayagui.client import playlistUndo
+        _ = playlistUndo()
+
+    @pyqtSlot()
+    def onPlaylistRedo(self):
+        from txplayagui.client import playlistRedo
+        _ = playlistRedo()
 
     @pyqtSlot()
     def onPlaySelected(self):
@@ -245,7 +258,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         else:
             self.playlistsDock.hide()
 
-
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
         trackname = trackData['track']['trackname']
@@ -277,6 +289,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot(object)
     def onPlaylistChanged(self, data):
+        self.playlistModel.hasUndo = data['hasUndo']
+        self.playlistModel.hasRedo = data['hasRedo']
         self.playlistModel.updateAll(data['playlist'])
         self.playlistLengthLabel.setText(self.playlistModel.fullLength())
 

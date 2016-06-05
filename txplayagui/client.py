@@ -172,3 +172,11 @@ def savePlaylist(name):
 def deletePlaylist(name):
     url = baseUrl() + '/playlist/delete/' + url_quote(name)
     return _requestGet(url)
+
+def playlistUndo():
+    url = baseUrl() + '/playlist/undo'
+    return _requestGet(url)
+
+def playlistRedo():
+    url = baseUrl() + '/playlist/redo'
+    return _requestGet(url)

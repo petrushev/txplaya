@@ -26,6 +26,8 @@ class PlaylistModel(QAbstractTableModel):
     info_keys = ('Title', 'Artist', 'Album', 'Length')
     _tracks = []
     currentPosition = None
+    hasUndo = False
+    hasRedo = False
 
     trackInserted = pyqtSignal(int, Track)
     trackRemoved = pyqtSignal(int)
@@ -88,8 +90,10 @@ class PlaylistMenu(QMenu):
     clear = pyqtSignal()
     save = pyqtSignal(unicode)
     reconnect = pyqtSignal()
+    undo = pyqtSignal()
+    redo = pyqtSignal()
 
-    def __init__(self, index, isPlaylistEmpty, parent=None):
+    def __init__(self, index, isPlaylistEmpty, hasUndo, hasRedo, parent=None):
         QMenu.__init__(self, parent)
 
         self.trackIndex = index
@@ -99,13 +103,21 @@ class PlaylistMenu(QMenu):
             play.triggered.connect(self._onPlay)
             remove = self.addAction("Remove")
             remove.triggered.connect(self._onRemove)
-        
+
         if not isPlaylistEmpty:
             clear = self.addAction("Clear")
             clear.triggered.connect(self._onClear)
 
             save = self.addAction("Save")
             save.triggered.connect(self._onSave)
+
+        if hasUndo:
+            undo = self.addAction("Undo")
+            undo.triggered.connect(self._onUndo)
+
+        if hasRedo:
+            redo = self.addAction("Redo")
+            redo.triggered.connect(self._onRedo)
 
         reconnect = self.addAction("Reconnect")
         reconnect.triggered.connect(self._onReconnect)
@@ -131,3 +143,11 @@ class PlaylistMenu(QMenu):
         playlistName, accepted = QInputDialog.getText(self, 'Save playlist', 'Playlist name:')
         if accepted:
             self.save.emit(playlistName)
+
+    @pyqtSlot()
+    def _onUndo(self):
+        self.undo.emit()
+
+    @pyqtSlot()
+    def _onRedo(self):
+        self.redo.emit()
