@@ -35,7 +35,11 @@ class PlaylistRegistry(object):
             f.write(content)
 
     def list_(self):
-        return sorted(self._reg.keys())
+        names = self._reg.keys()
+        if '__current__' in names:
+            names.remove('__current__')
+        names.sort()
+        return names
 
     def savePlaylist(self, name, trackPaths):
         self._reg[name] = trackPaths

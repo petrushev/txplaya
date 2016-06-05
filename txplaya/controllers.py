@@ -75,9 +75,13 @@ class PlaylistManager(BaseController):
                 for track in self.mainController.playlist.iterTrack()]
 
     def getData(self):
-        return {'playlist': self.playlistData}
+        return {'playlist': self.playlistData,
+                'hasUndo': self.mainController.playlist.hasUndo,
+                'hasRedo': self.mainController.playlist.hasRedo}
 
     def _insert(self, filepaths):
+        self.mainController.playlist.mark()
+
         for filepath in filepaths:
             if not self.mainController.library.pathExists(filepath):
                 continue
@@ -149,6 +153,14 @@ class PlaylistManager(BaseController):
         self.mainController.announce(event)
 
         return {'msg': 'Playlist deleted'}
+
+    def undo(self):
+        self.mainController.playlist.undo()
+        return {'msg': 'Playlist undo'}
+
+    def redo(self):
+        self.mainController.playlist.redo()
+        return {'msg': 'Playlist redo'}
 
 
 class Player(BaseController):
@@ -324,7 +336,9 @@ class InfoStream(BaseStream):
         playlistData = [track.meta
                         for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
-                 'data': {'playlist': playlistData}}
+                 'data': {'playlist': playlistData,
+                          'hasUndo': playlist.hasUndo,
+                          'hasRedo': playlist.hasRedo}}
         self.write(json.dumps(event) + '\n')
 
         # push list of playlists

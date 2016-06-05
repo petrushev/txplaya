@@ -12,6 +12,7 @@ from twisted.python import log
 
 from txplaya.library import Library
 from txplaya.lastfm import getScrobbler
+from txplaya.track import Track
 
 ITER_TIME = 0.2
 HISTORY_CHUNKS = 2
@@ -150,6 +151,9 @@ class Playlist(object):
     _order = {}
     _currentUid = None
 
+    _undos = deque()
+    _redos = deque()
+
     def iterTrackUid(self):
         keys = sorted(self._order.keys())
         for dposition in keys:
@@ -159,6 +163,10 @@ class Playlist(object):
     def iterTrack(self):
         for trackUid in self.iterTrackUid():
             yield self._reg[trackUid]
+
+    @property
+    def _paths(self):
+        return [track._path for track in self.iterTrack()]
 
     def insert(self, track, position=None, emit=True):
         if self._reg == {}:
@@ -181,10 +189,47 @@ class Playlist(object):
         if emit:
             self.onChanged()
 
+    def mark(self):
+        self._undos.append((dict(self._reg), dict(self._order)))
+        self._redos.clear()
+
+    def undo(self):
+        if not self.hasUndo:
+            return
+
+        self._redos.appendleft((dict(self._reg), dict(self._order)))
+        self._reg, self._order = self._undos.pop()
+
+        if self._currentUid not in self._reg:
+            self._currentUid = None
+
+        self.onChanged()
+
+    def redo(self):
+        if not self.hasRedo:
+            return
+
+        self._undos.append((dict(self._reg), dict(self._order)))
+        self._reg, self._order = self._redos.popleft()
+
+        if self._currentUid not in self._reg:
+            self._currentUid = None
+
+        self.onChanged()
+
+    @property
+    def hasUndo(self):
+        return len(self._undos) > 0
+    @property
+    def hasRedo(self):
+        return len(self._redos) > 0
+
     def remove(self, position, emit=True):
         keys = sorted(self._order.keys())
         dposition = keys[position]
         trackUid = self._order[dposition]
+
+        self.mark()
 
         del self._order[dposition]
         del self._reg[trackUid]
@@ -210,6 +255,8 @@ class Playlist(object):
         else:
             dpositionTarget = (keys[target] + keys[target - 1]) / 2
 
+        self.mark()
+
         del self._order[dpositionOrigin]
         self._order[dpositionTarget] = trackUid
 
@@ -217,9 +264,12 @@ class Playlist(object):
             self.onChanged()
 
     def clear(self):
+        self.mark()
+
         self._order.clear()
         self._reg.clear()
         self._currentUid = None
+
         self.onChanged()
 
     @property
@@ -308,6 +358,23 @@ class MainController(object):
         self.player.onPaused = self.onPlayerPaused
         self.playlist.onChanged = self.onPlaylistChange
 
+    def onStart(self):
+        from txplaya.playlistregistry import playlistRegistry
+
+        filepaths = playlistRegistry.loadPlaylist('__current__')
+
+        for filepath in filepaths:
+            if not self.library.pathExists(filepath):
+                continue
+            track = Track(filepath)
+            self.playlist.insert(track)
+
+    def onStop(self):
+        from txplaya.playlistregistry import playlistRegistry
+
+        paths = [track._path for track in self.playlist.iterTrack()]
+        playlistRegistry.savePlaylist('__current__', paths)
+
     def announce(self, data):
         buf = json.dumps(data) + '\n'
         for listener in self.infoListenerRegistry.iterListeners():
@@ -365,11 +432,13 @@ class MainController(object):
             _d = deferLater(reactor, 0, listener.onPush, buf)
 
     def onPlaylistChange(self):
+        playlist = self.playlist
         playlistData = [track.meta
-                        for track in self.playlist.iterTrack()]
+                        for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
-                 'data': {'playlist': playlistData}}
-
+                 'data': {'playlist': playlistData,
+                          'hasUndo': playlist.hasUndo,
+                          'hasRedo': playlist.hasRedo}}
         self.announce(event)
 
     def onTimerUpdate(self, elapsed):

@@ -1,6 +1,7 @@
 import json
 
-from twisted.web.http import Request, HTTPChannel, NOT_FOUND
+from twisted.web.http import Request, HTTPChannel, HTTPFactory, NOT_FOUND
+from twisted.application.internet import TCPServer as BaseTCPServer
 
 from werkzeug.exceptions import NotFound
 
@@ -38,3 +39,23 @@ def getFrontHandler():
 
 class FrontChannel(HTTPChannel):
     requestFactory = getFrontHandler()
+
+
+httpFactory = HTTPFactory.forProtocol(FrontChannel)
+
+
+class TCPServer(BaseTCPServer):
+
+    def startService(self):
+        BaseTCPServer.startService(self)
+
+        protocolFactory = self.args[1]
+        mainController = protocolFactory.protocol.requestFactory.mainController
+        mainController.onStart()
+
+    def stopService(self):
+        protocolFactory = self.args[1]
+        mainController = protocolFactory.protocol.requestFactory.mainController
+        mainController.onStop()
+
+        BaseTCPServer.stopService(self)
