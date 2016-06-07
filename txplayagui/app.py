@@ -263,7 +263,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         trackname = trackData['track']['trackname']
         length = int(ceil(trackData['track']['length']))
         self.trackProgressBar.setFormat(trackname)
-        self.trackProgressBar.setMaximum(length)
 
         self.playButton.hide()
         self.pauseButton.show()
@@ -343,8 +342,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             self.close()
 
     @pyqtSlot(int)
-    def timerUpdated(self, time):
-        self.trackProgressBar.setValue(time)
+    def timerUpdated(self, progress):
+        self.trackProgressBar.setValue(progress)
 
     def keyReleaseEvent(self, event):
         from txplayagui.client import remove, deletePlaylist

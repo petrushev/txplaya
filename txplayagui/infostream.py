@@ -42,8 +42,8 @@ class QInfoStream(QObject):
             self.playlistChanged.emit(data)
 
         elif event == 'TimerUpdate':
-            time = int(ceil(data['time']))
-            self.timerUpdated.emit(time)
+            progress = int(data['time'])
+            self.timerUpdated.emit(progress)
 
         elif event == 'PlaylistRegistryUpdated':
             list_ = data['list']
