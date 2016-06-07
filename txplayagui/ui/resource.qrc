@@ -1,5 +1,10 @@
 <RCC>
   <qresource prefix="icons">
+    <file>img/undo.svg</file>
+    <file>img/redo.svg</file>
+    <file>img/save.svg</file>
+    <file>img/remove.svg</file>
+    <file>img/clear.svg</file>
     <file>img/playlist.svg</file>
     <file>img/reconnect.svg</file>
     <file>img/dialog_close.svg</file>

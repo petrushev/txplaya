@@ -1,6 +1,7 @@
 import json
 
 from PyQt5.QtCore import QMimeData
+from PyQt5.QtGui import QIcon, QPixmap
 
 
 def mimeWrapJson(data):
@@ -11,6 +12,11 @@ def mimeWrapJson(data):
 
 def unwrapMime(mimeData):
     return json.loads(mimeData.text())
+
+def loadIcon(path):
+    icon = QIcon()
+    icon.addPixmap(QPixmap(path), QIcon.Normal, QIcon.Off)
+    return icon
 
 
 class SortedDict(dict):

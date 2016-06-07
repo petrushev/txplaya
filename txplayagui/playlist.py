@@ -4,6 +4,7 @@ from math import floor, ceil
 from PyQt5.QtWidgets import QMenu, QInputDialog
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
 
+from txplayagui.utilities import loadIcon
 
 class Track(object):
 
@@ -99,27 +100,27 @@ class PlaylistMenu(QMenu):
         self.trackIndex = index
 
         if index.row() != -1:
-            play = self.addAction("Play")
+            play = self.addAction(loadIcon(":/icons/img/play.svg"), "Play")
             play.triggered.connect(self._onPlay)
-            remove = self.addAction("Remove")
+            remove = self.addAction(loadIcon(":/icons/img/remove.svg"), "Remove")
             remove.triggered.connect(self._onRemove)
 
         if not isPlaylistEmpty:
-            clear = self.addAction("Clear")
+            clear = self.addAction(loadIcon(":/icons/img/clear.svg"), "Clear")
             clear.triggered.connect(self._onClear)
 
-            save = self.addAction("Save")
+            save = self.addAction(loadIcon(":/icons/img/save.svg"), "Save")
             save.triggered.connect(self._onSave)
 
         if hasUndo:
-            undo = self.addAction("Undo")
+            undo = self.addAction(loadIcon(":/icons/img/undo.svg"), "Undo")
             undo.triggered.connect(self._onUndo)
 
         if hasRedo:
-            redo = self.addAction("Redo")
+            redo = self.addAction(loadIcon(":/icons/img/redo.svg"), "Redo")
             redo.triggered.connect(self._onRedo)
 
-        reconnect = self.addAction("Reconnect")
+        reconnect = self.addAction(loadIcon(":/icons/img/reconnect.svg"), "Reconnect")
         reconnect.triggered.connect(self._onReconnect)
 
     @pyqtSlot()
