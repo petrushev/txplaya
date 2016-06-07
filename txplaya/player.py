@@ -4,7 +4,6 @@ import gc
 from uuid import uuid4
 from operator import itemgetter
 import json
-from datetime import datetime
 
 from twisted.internet import reactor
 from twisted.internet.task import deferLater
@@ -15,7 +14,7 @@ from txplaya.lastfm import getScrobbler
 from txplaya.track import Track
 
 ITER_TIME = 0.2
-HISTORY_CHUNKS = 2
+HISTORY_CHUNKS = 4
 
 
 itemgetter0 = itemgetter(0)
@@ -54,6 +53,7 @@ class Player(object):
     paused = False
     data = deque()
     history = deque()
+    currentSize = 0
 
     def __init__(self):
         self._garbageCollect()
@@ -65,8 +65,7 @@ class Player(object):
 
     def feed(self, track, clear=False):
         chunks = track.dataChunks(ITER_TIME)
-
-        self.timeStarted = datetime.utcnow()
+        self.currentSize = sum(map(len, chunks))
 
         if clear:
             self.data.clear()
@@ -78,6 +77,7 @@ class Player(object):
 
         if len(self.data) == 0:
             self.playing = False
+            self.currentSize = 0
             self.onTrackFinished()
             return
 
@@ -93,8 +93,18 @@ class Player(object):
         # push buffer to management
         self.onPush(buf)
 
+        self._timerUpdate()
+
+    def _timerUpdate(self):
+        if self.currentSize == 0:
+            self.onTimerUpdate(0)
+            return
+
+        remainingSize = sum(map(len, self.data))
+        progressPercent = int((self.currentSize - remainingSize ) * 100.0 / self.currentSize)
+
         # update timer
-        self.onTimerUpdate(datetime.utcnow() - self.timeStarted)
+        self.onTimerUpdate(progressPercent)
 
     def start(self):
         if len(self.data) == 0:
@@ -441,7 +451,7 @@ class MainController(object):
                           'hasRedo': playlist.hasRedo}}
         self.announce(event)
 
-    def onTimerUpdate(self, elapsed):
+    def onTimerUpdate(self, percent):
         event = {'event': 'TimerUpdate',
-                 'data': {'time': int(elapsed.seconds)}}
+                 'data': {'time': percent}}
         self.announce(event)
