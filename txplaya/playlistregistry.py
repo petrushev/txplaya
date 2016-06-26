@@ -3,6 +3,7 @@ from os.path import join as path_join
 from os import environ
 from zlib import compress, decompress
 import json
+from base64 import b64encode, b64decode
 
 if 'TXPLAYA_PLAYLISTS' in environ:
     PATH = environ['TXPLAYA_PLAYLISTS']
@@ -42,14 +43,15 @@ class PlaylistRegistry(object):
         return names
 
     def savePlaylist(self, name, trackPaths):
-        self._reg[name] = trackPaths
+        self._reg[name] = map(b64encode, trackPaths)
         self.save()
 
     def loadPlaylist(self, name):
         try:
-            return self._reg[name]
+            playlist = self._reg[name]
         except KeyError:
             return []
+        return map(b64decode, playlist)
 
     def deletePlaylist(self, name):
         try:
