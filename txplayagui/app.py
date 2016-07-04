@@ -2,7 +2,8 @@ import json
 from math import ceil
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
-from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt
+from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt, \
+    QSettings
 
 from txplayagui.ui.main import Ui_MainWindow
 from txplayagui.playlist import PlaylistModel, PlaylistMenu
@@ -49,6 +50,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.library = LibraryWidget(self)
         self.libraryDock.setWidget(self.library)
+        self.libraryDock.hide()
         self.library.rescanStarted.connect(self.onLibraryRescanStarted)
         self.library.itemsActivated.connect(self.onLibraryItemActivated)
 
@@ -56,6 +58,20 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.playlistsDock.setWidget(self.playlists)
         self.playlistsDock.hide()
         self.playlists.loadPlaylist.connect(self.onPlaylistLoad)
+
+        self.dockState = 0
+
+        self.settings = QSettings('txplaya', 'txplaya')
+
+        if u'geometry/main' in self.settings.allKeys():
+            self.setGeometry(self.settings.value(u'geometry/main'))
+
+            for col in range(4):
+                width = self.settings.value(u'geometry/playlist/col/%d' % col)
+                self.playlistTable.setColumnWidth(col, int(width))
+
+            dockState = int(self.settings.value(u'geometry/dock/state'))
+            self.dockShow(dockState)
 
         self.infoStreamStart()
         QTimer.singleShot(200, self.fetchLibrary)
@@ -236,27 +252,38 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         response = prev()
         response.finished.connect(self.getCallbackLogServer(response))
 
-    @pyqtSlot(bool)
-    def onToggleLibrary(self, show):
-        if show:
+    def dockShow(self, state):
+        if state == 1:
+            self.libraryDock.show()
+            self.toggleLibraryButton.setChecked(True)
             self.playlistsDock.hide()
             self.togglePlaylistsButton.setChecked(False)
 
-            self.libraryDock.show()
-
-        else:
+        elif state == 2:
             self.libraryDock.hide()
+            self.toggleLibraryButton.setChecked(False)
+            self.playlistsDock.show()
+            self.togglePlaylistsButton.setChecked(True)
+
+        self.dockState = state
+
+    @pyqtSlot(bool)
+    def onToggleLibrary(self, show):
+        if show:
+            self.dockShow(1)
+        else:
+            self.toggleLibraryButton.setChecked(False)
+            self.libraryDock.hide()
+            self.dockState = 0
 
     @pyqtSlot(bool)
     def onTogglePlaylists(self, show):
         if show:
-            self.libraryDock.hide()
-            self.toggleLibraryButton.setChecked(False)
-
-            self.playlistsDock.show()
-
+            self.dockShow(2)
         else:
             self.playlistsDock.hide()
+            self.togglePlaylistsButton.setChecked(False)
+            self.dockState = 0
 
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
@@ -381,3 +408,14 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                     _ = deletePlaylist(playlistName)
 
         return result
+
+    def closeEvent(self, event):
+        self.settings.setValue(u'geometry/main', self.geometry())
+
+        for col in range(4):
+            self.settings.setValue(u'geometry/playlist/col/%d' % col,
+                                   self.playlistTable.columnWidth(col))
+
+        self.settings.setValue(u'geometry/dock/state', self.dockState)
+
+        QMainWindow.closeEvent(self, event)
