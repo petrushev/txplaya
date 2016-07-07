@@ -3,6 +3,7 @@ from math import floor, ceil
 
 from PyQt5.QtWidgets import QMenu, QInputDialog, QWidget
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QColor
 
 from txplayagui.ui.playlistmenu import Ui_PlaylistMenuWidget
 
@@ -41,10 +42,14 @@ class PlaylistModel(QAbstractTableModel):
         return len(self._tracks)
 
     def data(self, index, role=Qt.DisplayRole):
+        trackId = index.row()
         if role == Qt.DisplayRole or role == Qt.ToolTipRole:
-            track_id = index.row()
-            info_key = self.info_keys[index.column()]
-            return self._tracks[track_id].id3.get(info_key)
+            infoKey = self.info_keys[index.column()]
+            return self._tracks[trackId].id3.get(infoKey)
+
+        elif role == Qt.BackgroundColorRole:
+            if trackId == self.currentPosition:
+                return QColor(255, 255, 130)
 
         return None
 
@@ -73,7 +78,9 @@ class PlaylistModel(QAbstractTableModel):
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
     def setPlayingPosition(self, position):
+        self.beginResetModel()
         self.currentPosition = position
+        self.endResetModel()
 
     def isPlaying(self, index):
         return index.row() == self.currentPosition

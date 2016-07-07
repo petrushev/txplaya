@@ -288,8 +288,11 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
         trackname = trackData['track']['trackname']
-        length = int(ceil(trackData['track']['length']))
+        #length = int(ceil(trackData['track']['length']))
         self.trackProgressBar.setFormat(trackname)
+
+        position = trackData['position']
+        self.playlistModel.setPlayingPosition(position)
 
         self.playButton.hide()
         self.pauseButton.show()
@@ -300,6 +303,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onPlaybackFinished(self):
         self.trackProgressBar.setFormat('not playing')
         self.trackProgressBar.setValue(0)
+        self.playlistModel.setPlayingPosition(None)
 
         self.playButton.show()
         self.pauseButton.hide()
