@@ -35,6 +35,16 @@
         <source>Playlists</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../ui/main.ui" line="331"/>
+        <source>&amp;Play</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/main.ui" line="340"/>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PlaylistsWidget</name>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PlaylistMenuWidget</class>
+ <widget class="QWidget" name="PlaylistMenuWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <action name="play">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/play.svg</normaloff>:/icons/img/play.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Play</string>
+   </property>
+  </action>
+  <action name="remove">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/remove.svg</normaloff>:/icons/img/remove.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Re&amp;move</string>
+   </property>
+  </action>
+  <action name="clear">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/clear.svg</normaloff>:/icons/img/clear.svg</iconset>
+   </property>
+   <property name="text">
+    <string>C&amp;lear</string>
+   </property>
+  </action>
+  <action name="save">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/save.svg</normaloff>:/icons/img/save.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="undo">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/undo.svg</normaloff>:/icons/img/undo.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+  </action>
+  <action name="redo">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/redo.svg</normaloff>:/icons/img/redo.svg</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+  </action>
+  <action name="reconnect">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/reconnect.svg</normaloff>:/icons/img/reconnect.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Re&amp;connect</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
+ <connections/>
+</ui>

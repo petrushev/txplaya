@@ -1,10 +1,11 @@
 import json
 from math import floor, ceil
 
-from PyQt5.QtWidgets import QMenu, QInputDialog
+from PyQt5.QtWidgets import QMenu, QInputDialog, QWidget
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
 
-from txplayagui.utilities import loadIcon
+from txplayagui.ui.playlistmenu import Ui_PlaylistMenuWidget
+
 
 class Track(object):
 
@@ -84,6 +85,13 @@ class PlaylistModel(QAbstractTableModel):
         return '{0}:{1:02d}'.format(min_, sec)
 
 
+class PlaylistMenuWidget(Ui_PlaylistMenuWidget, QWidget):
+
+    def __init__(self):
+        QWidget.__init__(self)
+        Ui_PlaylistMenuWidget.setupUi(self, self)
+
+
 class PlaylistMenu(QMenu):
 
     play = pyqtSignal(QModelIndex)
@@ -98,30 +106,31 @@ class PlaylistMenu(QMenu):
         QMenu.__init__(self, parent)
 
         self.trackIndex = index
+        self.w = PlaylistMenuWidget()
 
         if index.row() != -1:
-            play = self.addAction(loadIcon(":/icons/img/play.svg"), "Play")
-            play.triggered.connect(self._onPlay)
-            remove = self.addAction(loadIcon(":/icons/img/remove.svg"), "Remove")
-            remove.triggered.connect(self._onRemove)
+            self.addAction(self.w.play)
+            self.w.play.triggered.connect(self._onPlay)
+            self.addAction(self.w.remove)
+            self.w.remove.triggered.connect(self._onRemove)
 
         if not isPlaylistEmpty:
-            clear = self.addAction(loadIcon(":/icons/img/clear.svg"), "Clear")
-            clear.triggered.connect(self._onClear)
+            self.addAction(self.w.clear)
+            self.w.clear.triggered.connect(self._onClear)
 
-            save = self.addAction(loadIcon(":/icons/img/save.svg"), "Save")
-            save.triggered.connect(self._onSave)
+            self.addAction(self.w.save)
+            self.w.save.triggered.connect(self._onSave)
 
         if hasUndo:
-            undo = self.addAction(loadIcon(":/icons/img/undo.svg"), "Undo")
-            undo.triggered.connect(self._onUndo)
+            self.addAction(self.w.undo)
+            self.w.undo.triggered.connect(self._onUndo)
 
         if hasRedo:
-            redo = self.addAction(loadIcon(":/icons/img/redo.svg"), "Redo")
-            redo.triggered.connect(self._onRedo)
+            self.addAction(self.w.redo)
+            self.w.redo.triggered.connect(self._onRedo)
 
-        reconnect = self.addAction(loadIcon(":/icons/img/reconnect.svg"), "Reconnect")
-        reconnect.triggered.connect(self._onReconnect)
+        self.addAction(self.w.reconnect)
+        self.w.reconnect.triggered.connect(self._onReconnect)
 
     @pyqtSlot()
     def _onPlay(self):
