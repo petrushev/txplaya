@@ -50,7 +50,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.library = LibraryWidget(self)
         self.libraryDock.setWidget(self.library)
         self.libraryDock.hide()
-        self.library.rescanStarted.connect(self.onLibraryRescanStarted)
         self.library.itemsActivated.connect(self.onLibraryItemActivated)
 
         self.playlists = PlaylistsWidget(self)
@@ -335,24 +334,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.playlistModel.hasRedo = data['hasRedo']
         self.playlistModel.updateAll(data['playlist'])
         self.playlistLengthLabel.setText(self.playlistModel.fullLength())
-
-    @pyqtSlot()
-    def onLibraryRescanStarted(self):
-        from txplayagui.client import rescanLibrary
-        self.scanResponse = rescanLibrary()
-        self.scanResponse.lineReceived.connect(self.scanProgress)
-
-    @pyqtSlot(str)
-    def scanProgress(self, progress):
-        data = json.loads(progress.rstrip())
-        if 'scanprogress' in data:
-            progress = data['scanprogress']
-            self.library.setProgress(progress)
-        else:
-            self.scanResponse.close()
-            del self.scanResponse
-
-            self.library.rescanFinished(data['library'])
 
     @pyqtSlot(list)
     def onLibraryItemActivated(self, hashes):

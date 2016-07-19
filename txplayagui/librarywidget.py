@@ -1,3 +1,5 @@
+import json
+
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, QModelIndex
 from PyQt5.QtWidgets import QWidget, QSpacerItem, QSizePolicy
 
@@ -30,11 +32,28 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
 
     @pyqtSlot()
     def rescanClicked(self):
+        from txplayagui.client import rescanLibrary
+
         self.rescanButton.hide()
         self.scanControlsLayout.removeItem(self.scanControlsLayout.itemAt(2))
         self.scanProgressBar.show()
 
+        self.scanResponse = rescanLibrary()
+        self.scanResponse.lineReceived.connect(self.scanProgress)
+
         self.rescanStarted.emit()
+
+    @pyqtSlot(str)
+    def scanProgress(self, progress):
+        data = json.loads(progress.rstrip())
+        if 'scanprogress' in data:
+            progress = data['scanprogress']
+            self.setProgress(progress)
+        else:
+            self.scanResponse.close()
+            self.scanResponse.deleteLater()
+
+            self.rescanFinished(data['library'])
 
     @pyqtSlot(int, QModelIndex, bool)
     def onToggleRow(self, row, parentIndex, isShown):
