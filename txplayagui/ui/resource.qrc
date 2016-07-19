@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>img/restore.svg</file>
     <file>img/undo.svg</file>
     <file>img/redo.svg</file>
     <file>img/save.svg</file>

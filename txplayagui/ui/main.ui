@@ -284,6 +284,45 @@
         </property>
        </widget>
       </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>15</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="quitButton">
+        <property name="minimumSize">
+         <size>
+          <width>30</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Quit</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resource.qrc">
+          <normaloff>:/icons/img/dialog_close.svg</normaloff>:/icons/img/dialog_close.svg</iconset>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
    </layout>
@@ -322,6 +361,24 @@
    </attribute>
    <widget class="QWidget" name="playlistDockContent"/>
   </widget>
+  <action name="restore">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/restore.svg</normaloff>:/icons/img/restore.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Restore</string>
+   </property>
+  </action>
+  <action name="quit">
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/img/dialog_close.svg</normaloff>:/icons/img/dialog_close.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="resource.qrc"/>

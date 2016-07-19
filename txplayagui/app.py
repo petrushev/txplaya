@@ -1,7 +1,6 @@
 import json
-from math import ceil
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication
+from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QSystemTrayIcon, QMenu
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt, \
     QSettings
 
@@ -72,6 +71,19 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
             dockState = int(self.settings.value(u'geometry/dock/state'))
             self.dockShow(dockState)
+
+        self.systemTray = QSystemTrayIcon(self.windowIcon())
+        self.systemTray.setToolTip('Playa')
+        self.systemTray.show()
+        self.systemTray.activated.connect(self.systemTrayToggle)
+        systemTrayMenu = QMenu()
+        systemTrayMenu.addAction(self.restore)
+        systemTrayMenu.addAction(self.quit)
+        self.systemTray.setContextMenu(systemTrayMenu)
+        self.restore.triggered.connect(self.restoreWindow)
+        self.quit.triggered.connect(self.quitEvent)
+        self.quitButton.clicked.connect(self.quitEvent)
+        self.quitFlag = False
 
         self.infoStreamStart()
         QTimer.singleShot(200, self.fetchLibrary)
@@ -413,7 +425,25 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         return result
 
+    def systemTrayToggle(self, reason):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.restoreWindow()
+
+    def restoreWindow(self):
+        self.show()
+        self.setWindowState(Qt.WindowNoState)
+        self.setFocus()
+
     def closeEvent(self, event):
+        if not self.quitFlag:
+            self.hide()
+            event.ignore()
+        QMainWindow.closeEvent(self, event)
+
+    @pyqtSlot(bool)
+    def quitEvent(self, checked=None):
         self.settings.setValue(u'geometry/main', self.geometry())
 
         for col in range(4):
@@ -421,5 +451,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
                                    self.playlistTable.columnWidth(col))
 
         self.settings.setValue(u'geometry/dock/state', self.dockState)
-
-        QMainWindow.closeEvent(self, event)
+        self.systemTray.deleteLater()
+        
+        self.quitFlag = True
+        self.close()
