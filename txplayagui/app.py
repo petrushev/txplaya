@@ -110,12 +110,16 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self._playlistDragDropHandle(event, isDropped=True)
 
     def _playlistDragDropHandle(self, event, isDropped):
+        from txplayagui.client import moveTrack, libraryInsert
+
         mimeData = event.mimeData()
 
+        # get row
         rowPosition = event.pos().y() - self.playlistTable.rowHeight(0)
         rowTarget = self.playlistTable.rowAt(rowPosition)
 
         if rowTarget == -1:
+            # new row
             rowTarget = self.playlistModel.rowCount()
 
         if mimeData.hasUrls():
@@ -144,20 +148,23 @@ class MainWindow(Ui_MainWindow, QMainWindow):
             # invalid data passed
             return
 
-        # check for proper flag and position
-        if data.get('source') != 'playlist':
-            return
-
-        rowSource = data.get('row')
-        if not isinstance(rowSource, int):
+        # check for proper flag
+        source = data.get('source')
+        if source not in ('playlist', 'library'):
             return
 
         if not isDropped:
+            # drag entered
             event.acceptProposedAction()
             return
 
-        from txplayagui.client import moveTrack
-        moveTrack(rowSource, rowTarget)
+        if source == 'playlist':
+            rowSource = data['row']
+            moveTrack(rowSource, rowTarget)
+
+        elif source == 'library':
+            hashes = [item['hash'] for item in data['items']]
+            libraryInsert(hashes, position=rowTarget)
 
     def onLibraryLoaded(self, response):
         try:

@@ -197,8 +197,10 @@ class LibraryModel(QAbstractItemModel):
         return None
 
     def mimeData(self, indexes):
-        mimeDataDicts = [index.internalPointer().mimeDataDict for index in indexes]
-        return mimeWrapJson(mimeDataDicts)
+        items = [index.internalPointer().mimeDataDict for index in indexes]
+        mimeDataDict = {'source': 'library',
+                        'items': items}
+        return mimeWrapJson(mimeDataDict)
 
     def flags(self, index):
         item = index.internalPointer()

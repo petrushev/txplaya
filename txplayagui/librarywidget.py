@@ -61,11 +61,11 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
 
     @pyqtSlot(QModelIndex)
     def onTreeViewDoubleClicked(self, index):
-        mimeData = unwrapMime(self.libraryModel.mimeData([index]))[0]
-        if 'hash' in mimeData:
-            hashes = [mimeData['hash']]
-
-        elif 'album' in mimeData:
+        mimeData = unwrapMime(self.libraryModel.mimeData([index]))
+        item = mimeData['items'][0]
+        if 'hash' in item:
+            hashes = [item['hash']]
+        elif 'album' in item:
             hashes = self.libraryModel.albumHashes(index)
         else:
             # artist clicked
