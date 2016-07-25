@@ -12,6 +12,19 @@ def mimeWrapJson(data):
 def unwrapMime(mimeData):
     return json.loads(mimeData.text())
 
+def httpReceiver(response):
+
+    def getCallback(fc):
+
+        def wrapped(*args):
+            result = fc(*args)
+            response.deleteLater()
+            return result
+
+        return wrapped
+
+    return getCallback
+
 
 class SortedDict(dict):
 

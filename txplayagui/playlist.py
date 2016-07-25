@@ -1,11 +1,11 @@
-import json
 from math import floor, ceil
 
 from PyQt5.QtWidgets import QMenu, QInputDialog, QWidget
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QMimeData, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor
 
 from txplayagui.ui.playlistmenu import Ui_PlaylistMenuWidget
+from txplayagui.utilities import mimeWrapJson
 
 
 class Track(object):
@@ -26,7 +26,7 @@ class Track(object):
 
 class PlaylistModel(QAbstractTableModel):
 
-    info_keys = ('Title', 'Artist', 'Album', 'Length')
+    infoKeys = ('Title', 'Artist', 'Album', 'Length')
     _tracks = []
     currentPosition = None
     hasUndo = False
@@ -36,7 +36,7 @@ class PlaylistModel(QAbstractTableModel):
     trackRemoved = pyqtSignal(int)
 
     def columnCount(self, parent=QModelIndex()):
-        return 4
+        return len(self.infoKeys)
 
     def rowCount(self, parent=QModelIndex()):
         return len(self._tracks)
@@ -44,7 +44,7 @@ class PlaylistModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         trackId = index.row()
         if role == Qt.DisplayRole or role == Qt.ToolTipRole:
-            infoKey = self.info_keys[index.column()]
+            infoKey = self.infoKeys[index.column()]
             return self._tracks[trackId].id3.get(infoKey)
 
         elif role == Qt.BackgroundColorRole:
@@ -64,17 +64,12 @@ class PlaylistModel(QAbstractTableModel):
         self.endResetModel()
 
     def mimeData(self, indexes):
-        # TODO : refactor with utilities.mimeWrapJson
-        data = json.dumps({'source': 'playlist',
-                           'row': indexes[0].row()})
-        mimeData = QMimeData()
-        mimeData.setText(data)
-
-        return mimeData
+        return mimeWrapJson({'source': 'playlist',
+                             'row': indexes[0].row()})
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role==Qt.DisplayRole:
-            return self.info_keys[section]
+            return self.infoKeys[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
     def setPlayingPosition(self, position):

@@ -10,6 +10,7 @@ from txplayagui.infostream import QInfoStream
 from txplayagui.librarywidget import LibraryWidget
 from txplayagui.reconnectdialog import ReconnectDialog
 from txplayagui.playlistswidget import PlaylistsWidget
+from txplayagui.utilities import unwrapMime, httpReceiver
 
 # load translations
 locale = QLocale.system().name()
@@ -64,7 +65,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         if u'geometry/main' in self.settings.allKeys():
             self.setGeometry(self.settings.value(u'geometry/main'))
 
-            for col in range(4):
+            for col in range(self.playlistModel.columnCount()):
                 width = self.settings.value(u'geometry/playlist/col/%d' % col)
                 self.playlistTable.setColumnWidth(col, int(width))
 
@@ -100,7 +101,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
         response = getLibrary()
-        response.finished.connect(self.getCallbackLibraryLoaded(response))
+        response.finished.connect(httpReceiver(response)(self.onLibraryLoaded))
 
     def playlistDragEnterEvent(self, event):
         self._playlistDragDropHandle(event, isDropped=False)
@@ -137,9 +138,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         if not mimeData.hasText():
             return
 
-        text = mimeData.text()
         try:
-            data = json.loads(text)
+            data = unwrapMime(mimeData)
         except ValueError:
             # invalid data passed
             return
@@ -159,28 +159,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         from txplayagui.client import moveTrack
         moveTrack(rowSource, rowTarget)
 
-    def getCallbackLogServer(self, response):
+    def onLibraryLoaded(self, response):
+        try:
+            data = json.loads(response.data)
+            self.library.rescanFinished(data['library'])
 
-        @pyqtSlot()
-        def logServer():
-            print '[%d] %s' % (response.statusCode, response.data)
-
-        return logServer
-
-    def getCallbackLibraryLoaded(self, response):
-
-        @pyqtSlot()
-        def libraryLoaded():
-            try:
-                data = json.loads(response.data)
-                self.library.rescanFinished(data['library'])
-
-                if 'msg' in data:
-                    print data['msg']
-            except Exception, err:
-                print 'Library load error:', repr(err)
-
-        return libraryLoaded
+            if 'msg' in data:
+                print data['msg']
+        except Exception, err:
+            print 'Library load error:', repr(err)
 
     def _play(self, index):
         from txplayagui.client import play
@@ -248,31 +235,29 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     @pyqtSlot()
     def onStopClicked(self):
         from txplayagui.client import stop
-        response = stop()
-        response.finished.connect(self.getCallbackLogServer(response))
+        _ = stop()
 
     @pyqtSlot()
     def onNextClicked(self):
         from txplayagui.client import next_
-        response = next_()
-        response.finished.connect(self.getCallbackLogServer(response))
+        _ = next_()
 
     @pyqtSlot()
     def onPrevClicked(self):
         from txplayagui.client import prev
-        response = prev()
-        response.finished.connect(self.getCallbackLogServer(response))
+        _ = prev()
 
     def dockShow(self, state):
+        self.libraryDock.hide()
+        self.toggleLibraryButton.setChecked(False)
+        self.playlistsDock.hide()
+        self.togglePlaylistsButton.setChecked(False)
+
         if state == 1:
             self.libraryDock.show()
             self.toggleLibraryButton.setChecked(True)
-            self.playlistsDock.hide()
-            self.togglePlaylistsButton.setChecked(False)
 
         elif state == 2:
-            self.libraryDock.hide()
-            self.toggleLibraryButton.setChecked(False)
             self.playlistsDock.show()
             self.togglePlaylistsButton.setChecked(True)
 
@@ -280,26 +265,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot(bool)
     def onToggleLibrary(self, show):
-        if show:
-            self.dockShow(1)
-        else:
-            self.toggleLibraryButton.setChecked(False)
-            self.libraryDock.hide()
-            self.dockState = 0
+        self.dockShow(1 if show else 0)
 
     @pyqtSlot(bool)
     def onTogglePlaylists(self, show):
-        if show:
-            self.dockShow(2)
-        else:
-            self.playlistsDock.hide()
-            self.togglePlaylistsButton.setChecked(False)
-            self.dockState = 0
+        self.dockShow(2 if show else 0)
 
     @pyqtSlot(object)
     def onTrackStarted(self, trackData):
         trackname = trackData['track']['trackname']
-        #length = int(ceil(trackData['track']['length']))
         self.trackProgressBar.setFormat(trackname)
 
         position = trackData['position']
@@ -356,14 +330,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     @pyqtSlot()
     def reconnectDialog(self):
-        del self.infoStream
-        dialog = ReconnectDialog()
-
-        reconnected = dialog.exec_()
+        reconnected = ReconnectDialog().exec_()
         if reconnected:
+            self.infoStream.deleteLater()
             self.infoStreamStart()
         else:
-            self.close()
+            self.quitEvent()
 
     @pyqtSlot(int)
     def timerUpdated(self, progress):
@@ -427,12 +399,12 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def quitEvent(self, checked=None):
         self.settings.setValue(u'geometry/main', self.geometry())
 
-        for col in range(4):
+        for col in range(self.playlistModel.columnCount()):
             self.settings.setValue(u'geometry/playlist/col/%d' % col,
                                    self.playlistTable.columnWidth(col))
 
         self.settings.setValue(u'geometry/dock/state', self.dockState)
         self.systemTray.deleteLater()
-        
+
         self.quitFlag = True
         self.close()

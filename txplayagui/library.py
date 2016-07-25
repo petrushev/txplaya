@@ -34,11 +34,19 @@ class LibraryItem(object):
 
 class ArtistItem(LibraryItem):
 
-    def row(self):
-        key = self._data
+    @classmethod
+    def getKey(cls, data):
+        key = data
         if key.lower().startswith('the '):
-            key = self._data[4:]
-        return self.model._artists.index(key)
+            key = key[4:]
+        return key
+
+    @cached_property
+    def key(self):
+        return ArtistItem.getKey(self._data)
+
+    def row(self):
+        return self.model._artists.index(self.key)
 
     def data(self):
         if self._data == '':
@@ -65,9 +73,8 @@ class ArtistItem(LibraryItem):
 
     def removeAlbum(self, album):
         albumItem = self._children[album]
-        albumItem._parent = None
+        albumItem.clear()
         del self._children[album]
-        del albumItem
 
         if len(self._children) == 0:
             self.model.removeArtist(self._data)
@@ -106,9 +113,8 @@ class AlbumItem(LibraryItem):
 
     def removeTrack(self, track):
         trackItem = self._children[track]
-        trackItem._parent = None
+        trackItem.clear()
         del self._children[track]
-        del trackItem
 
         if len(self._children) == 0:
             albumkey = self._data
@@ -221,9 +227,7 @@ class LibraryModel(QAbstractItemModel):
         return self.createIndex(row, column, item)
 
     def getArtist(self, artist):
-        albumartistkey = artist
-        if albumartistkey.lower().startswith('the '):
-            albumartistkey = artist[4:]
+        albumartistkey = ArtistItem.getKey(artist)
 
         if albumartistkey in self._artists:
             artistItem = self._artists[albumartistkey]
@@ -235,13 +239,12 @@ class LibraryModel(QAbstractItemModel):
         return albumartistkey, artistItem
 
     def removeArtist(self, artist):
-        if artist.lower().startswith('the '):
-            artist = artist[4:]
+        artist = ArtistItem.getKey(artist)
 
         artistItem = self._artists[artist]
         artistItem.model = None
+        artistItem.clear()
         del self._artists[artist]
-        del artistItem
 
     def loadData(self, libraryData):
         self.beginResetModel()
@@ -250,7 +253,6 @@ class LibraryModel(QAbstractItemModel):
         while self._artists:
             _, artistItem = self._artists.popitem()
             artistItem.clear()
-            del artistItem
 
         # fill new
         for hash_, meta in libraryData.iteritems():

@@ -1,5 +1,4 @@
 import json
-from math import ceil
 
 from PyQt5.QtCore import QObject, pyqtSignal
 

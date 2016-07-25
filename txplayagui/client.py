@@ -8,7 +8,7 @@ from txplayagui.settings import baseUrl
 
 class QBaseRequest(QObject):
 
-    finished = pyqtSignal()
+    finished = pyqtSignal(QObject)
     error = pyqtSignal(int)
 
     def __init__(self, url, params=None, parent=None):
@@ -52,7 +52,7 @@ class QRequest(QBaseRequest):
         self.data = self.response.readAll().data()
         self.statusCode = self.response.attribute(QNetworkRequest.HttpStatusCodeAttribute)
 
-        self.finished.emit()
+        self.finished.emit(self)
         self.response.deleteLater()
 
 
@@ -83,7 +83,7 @@ class QStreamRequest(QBaseRequest):
             line, self._buf = self._buf.split('\n', 1)
             self.lineReceived.emit(line)
 
-        self.finished.emit()
+        self.finished.emit(self)
         self.response.deleteLater()
 
 
