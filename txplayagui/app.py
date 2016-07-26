@@ -314,6 +314,7 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.playlistModel.hasUndo = data['hasUndo']
         self.playlistModel.hasRedo = data['hasRedo']
         self.playlistModel.updateAll(data['playlist'])
+        self.playlistModel.setPlayingPosition(data['position'])
         self.playlistLengthLabel.setText(self.playlistModel.fullLength())
 
     @pyqtSlot(list)
