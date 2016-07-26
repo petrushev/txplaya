@@ -337,6 +337,7 @@ class InfoStream(BaseStream):
                         for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
                  'data': {'playlist': playlistData,
+                          'position': playlist.currentPosition,
                           'hasUndo': playlist.hasUndo,
                           'hasRedo': playlist.hasRedo}}
         self.write(json.dumps(event) + '\n')

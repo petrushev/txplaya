@@ -448,7 +448,8 @@ class MainController(object):
         event = {'event': 'PlaylistChanged',
                  'data': {'playlist': playlistData,
                           'hasUndo': playlist.hasUndo,
-                          'hasRedo': playlist.hasRedo}}
+                          'hasRedo': playlist.hasRedo,
+                          'position': playlist.currentPosition}}
         self.announce(event)
 
     def onTimerUpdate(self, percent):
