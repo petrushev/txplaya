@@ -1,5 +1,7 @@
 from math import floor, ceil
 
+from werkzeug.utils import cached_property
+
 from PyQt5.QtWidgets import QMenu, QInputDialog, QWidget
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor
@@ -15,13 +17,49 @@ class Track(object):
         track = Track()
         track.id3 = {'Album': data['album'],
                      'Title': data['trackname'],
-                     'Artist': data['artist']}
+                     'Artist': data['artist'],
+                     'AlbumArtist': data['albumartist'],
+                     'Year': data['year'],
+                     'TrackNumber': data['tracknumber']}
+
         track.length = data['length']
         sec = track.length
         min_ = int(floor(sec/60))
         sec = int(ceil(sec - min_ * 60))
         track.id3['Length'] = '{0}:{1:02d}'.format(min_, sec)
         return track
+
+    def getToolTip(self, infoKey):
+        return getattr(self, infoKey.lower() + 'Tip')
+
+    @cached_property
+    def titleTip(self):
+        try:
+            return u'%d. %s' % (self.id3['TrackNumber'], self.id3['Title'])
+        except TypeError:
+            return self.id3['Title']
+
+    @cached_property
+    def artistTip(self):
+        return self.id3['Artist']
+
+    @cached_property
+    def albumTip(self):
+        album = self.id3['Album']
+        artist = self.id3['Artist']
+        albumArtist = self.id3['AlbumArtist']
+        if albumArtist != artist:
+            album = u'%s - %s' % (album, albumArtist)
+        album = album.strip('- ')
+
+        try:
+            return u'%s (%d)' % (album, self.id3['Year'])
+        except TypeError:
+            return album
+
+    @cached_property
+    def lengthTip(self):
+        return self.id3['Length']
 
 
 class PlaylistModel(QAbstractTableModel):
@@ -43,9 +81,13 @@ class PlaylistModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         trackId = index.row()
-        if role == Qt.DisplayRole or role == Qt.ToolTipRole:
+        if role == Qt.DisplayRole:
             infoKey = self.infoKeys[index.column()]
             return self._tracks[trackId].id3.get(infoKey)
+
+        elif role == Qt.ToolTipRole:
+            infoKey = self.infoKeys[index.column()]
+            return self._tracks[trackId].getToolTip(infoKey)
 
         elif role == Qt.BackgroundColorRole:
             if trackId == self.currentPosition:
@@ -79,6 +121,14 @@ class PlaylistModel(QAbstractTableModel):
 
     def isPlaying(self, index):
         return index.row() == self.currentPosition
+
+    def trackActivated(self, trackData=None):
+        if trackData is None:
+            position = None
+        else:
+            position = trackData['position']
+
+        self.setPlayingPosition(position)
 
     def fullLength(self):
         sec = sum([track.length for track in self._tracks])

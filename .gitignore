@@ -68,6 +68,7 @@ txplayagui/ui/reconnectdialog.py
 txplayagui/ui/library.py
 txplayagui/ui/playlists.py
 txplayagui/ui/playlistmenu.py
+txplayagui/ui/playback.py
 .library
 twistd.pid
 envs

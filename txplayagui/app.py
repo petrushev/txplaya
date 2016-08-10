@@ -10,7 +10,8 @@ from txplayagui.infostream import QInfoStream
 from txplayagui.librarywidget import LibraryWidget
 from txplayagui.reconnectdialog import ReconnectDialog
 from txplayagui.playlistswidget import PlaylistsWidget
-from txplayagui.utilities import unwrapMime, httpReceiver
+from txplayagui.utilities import unwrapMime, onHttpResponse
+from txplayagui.playback import PlaybackWidget
 
 # load translations
 locale = QLocale.system().name()
@@ -33,15 +34,15 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
         self.playlistModel = PlaylistModel()
         self.playlistTable.setModel(self.playlistModel)
-
         self.playlistTable.customContextMenuRequested.connect(self.playlistContextMenu)
         self.playlistTable.doubleClicked.connect(self.onPlaylistDoubleClick)
 
-        self.playButton.clicked.connect(self.onPlaySelected)
-        self.pauseButton.clicked.connect(self.onPauseClicked)
-        self.stopButton.clicked.connect(self.onStopClicked)
-        self.nextButton.clicked.connect(self.onNextClicked)
-        self.prevButton.clicked.connect(self.onPrevClicked)
+        self.playback = PlaybackWidget(self)
+        self.playbackLayout.addWidget(self.playback)
+        self.playback.playButton.clicked.connect(self.onPlaySelected)
+
+        self.playback.nextButton.clicked.connect(self.onNextClicked)
+        self.playback.prevButton.clicked.connect(self.onPrevClicked)
 
         self.libraryDock.setTitleBarWidget(QWidget())
         self.playlistsDock.setTitleBarWidget(QWidget())
@@ -90,18 +91,19 @@ class MainWindow(Ui_MainWindow, QMainWindow):
 
     def infoStreamStart(self):
         self.infoStream = QInfoStream()
-        self.infoStream.trackStarted.connect(self.onTrackStarted)
-        self.infoStream.playbackFinished.connect(self.onPlaybackFinished)
-        self.infoStream.playbackPaused.connect(self.onPlaybackPaused)
+        self.infoStream.trackStarted.connect(self.playback.trackStarted)
+        self.infoStream.trackStarted.connect(self.playlistModel.trackActivated)
+        self.infoStream.playbackFinished.connect(self.playback.finished)
+        self.infoStream.playbackFinished.connect(self.playlistModel.trackActivated)
+        self.infoStream.playbackPaused.connect(self.playback.paused)
         self.infoStream.playlistChanged.connect(self.onPlaylistChanged)
         self.infoStream.disconnected.connect(self.reconnectDialog)
-        self.infoStream.timerUpdated.connect(self.timerUpdated)
+        self.infoStream.timerUpdated.connect(self.playback.timerUpdated)
         self.infoStream.playlistRegistryUpdated.connect(self.playlistRegistryUpdated)
 
     def fetchLibrary(self):
         from txplayagui.client import getLibrary
-        response = getLibrary()
-        response.finished.connect(httpReceiver(response)(self.onLibraryLoaded))
+        onHttpResponse(getLibrary(), self.onLibraryLoaded)
 
     def playlistDragEnterEvent(self, event):
         self._playlistDragDropHandle(event, isDropped=False)
@@ -230,19 +232,9 @@ class MainWindow(Ui_MainWindow, QMainWindow):
     def onPlaySelected(self):
         selectedIdx = self.playlistTable.selectedIndexes()
         if len(selectedIdx) == 0:
-            return
+            selectedIdx = [self.playlistModel.index(0, 0)]
 
         self._play(selectedIdx[0])
-
-    @pyqtSlot()
-    def onPauseClicked(self):
-        from txplayagui.client import pause
-        _ = pause()
-
-    @pyqtSlot()
-    def onStopClicked(self):
-        from txplayagui.client import stop
-        _ = stop()
 
     @pyqtSlot()
     def onNextClicked(self):
@@ -279,43 +271,17 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.dockShow(2 if show else 0)
 
     @pyqtSlot(object)
-    def onTrackStarted(self, trackData):
-        trackname = trackData['track']['trackname']
-        self.trackProgressBar.setFormat(trackname)
-
-        position = trackData['position']
-        self.playlistModel.setPlayingPosition(position)
-
-        self.playButton.hide()
-        self.pauseButton.show()
-        self.pauseButton.setChecked(False)
-        self.stopButton.show()
-
-    @pyqtSlot()
-    def onPlaybackFinished(self):
-        self.trackProgressBar.setFormat('not playing')
-        self.trackProgressBar.setValue(0)
-        self.playlistModel.setPlayingPosition(None)
-
-        self.playButton.show()
-        self.pauseButton.hide()
-        self.stopButton.hide()
-
-    @pyqtSlot(bool)
-    def onPlaybackPaused(self, paused):
-        self.playButton.hide()
-        self.pauseButton.show()
-        self.stopButton.show()
-
-        self.pauseButton.setChecked(paused)
-
-    @pyqtSlot(object)
     def onPlaylistChanged(self, data):
         self.playlistModel.hasUndo = data['hasUndo']
         self.playlistModel.hasRedo = data['hasRedo']
         self.playlistModel.updateAll(data['playlist'])
         self.playlistModel.setPlayingPosition(data['position'])
         self.playlistLengthLabel.setText(self.playlistModel.fullLength())
+
+        if self.playlistModel.rowCount() == 0:
+            self.playback.playButton.hide()
+        else:
+            self.playback.playButton.show()
 
     @pyqtSlot(list)
     def onLibraryItemActivated(self, hashes):
@@ -345,10 +311,6 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         else:
             self.quitEvent()
 
-    @pyqtSlot(int)
-    def timerUpdated(self, progress):
-        self.trackProgressBar.setValue(progress)
-
     def keyReleaseEvent(self, event):
         from txplayagui.client import remove, deletePlaylist
 
@@ -363,8 +325,8 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         elif event.modifiers() == Qt.NoModifier and event.key() == 32:
             # Space, toggle playback
             if focusWidget != self.library.querySearchBox:
-                if self.pauseButton.isVisible():
-                    self.onPauseClicked()
+                if self.playback.pauseButton.isVisible():
+                    self.playback.onPauseClicked()
                 else:
                     self.onPlaySelected()
 
