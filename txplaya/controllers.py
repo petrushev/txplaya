@@ -35,6 +35,17 @@ class BaseController(object):
     def finishWithError(self, failure):
         self.isFinished = True
 
+    def writeJson(self, data):
+        self.request.setHeader('Content-Type', 'application/json')
+        self.request.write(json.dumps(data).encode('utf-8'))
+
+    def writeJsonLine(self, data):
+        self.request.write((json.dumps(data) + '\n').encode('utf-8'))
+
+    def respondJson(self, data):
+        self.writeJson(data)
+        self.finish()
+
 
 class BaseStream(BaseController):
 
@@ -65,9 +76,7 @@ class PlaylistManager(BaseController):
         action = getattr(self, action)
         response = action()
 
-        self.request.setHeader('Content-Type', 'application/json')
-        self.write(json.dumps(response))
-        self.finish()
+        self.respondJson(response)
 
     @property
     def playlistData(self):
@@ -175,9 +184,7 @@ class Player(BaseController):
         action = getattr(self, action)
         response = action()
 
-        self.request.setHeader('Content-Type', 'application/json')
-        self.write(json.dumps(response))
-        self.finish()
+        self.respondJson(response)
 
     def start(self):
         if self.positionArg is None:
@@ -256,15 +263,12 @@ class Library(BaseController):
         action = getattr(self, action)
         response = action()
 
-        self.request.setHeader('Content-Type', 'application/json')
-
         if not self.wait:
-            self.write(json.dumps(response))
-            self.finish()
+            self.respondJson(response)
+        else:
+            self.request.setHeader('Content-Type', 'application/json')
 
     def rescan(self):
-        self.request.setHeader('Content-Type', 'text/plain')
-
         self.mainController.library.clear()
         self.dirs = self.mainController.library.scanDirs()
 
@@ -286,7 +290,7 @@ class Library(BaseController):
 
         if int(newProgress) > self.progress:
             self.progress = newProgress
-            self.request.write(json.dumps({'scanprogress': newProgress}) + '\n')
+            self.writeJsonLine({'scanprogress': newProgress})
 
         deferLater(reactor, 0, self._loopScan)
 
@@ -297,8 +301,8 @@ class Library(BaseController):
         log.msg('Total tracks: %d' % len(library.data))
         library.saveBin()
 
-        self.write(json.dumps({'msg': 'Rescan finished',
-                               'library': library.data}) + '\n')
+        self.writeJsonLine({'msg': 'Rescan finished',
+                            'library': library.data})
         self.finish()
 
     def getLibrary(self):
@@ -321,16 +325,16 @@ class InfoStream(BaseStream):
         if playlist.currentPosition is None:
             event = {'event': 'PlaybackFinished',
                      'data': {}}
-            self.write(json.dumps(event) + '\n')
+            self.writeJsonLine(event)
 
         else:
             event = {'event': 'TrackStarted',
                      'data': {'position': playlist.currentPosition,
                               'track': playlist.currentTrack.meta}}
-            self.write(json.dumps(event) + '\n')
+            self.writeJsonLine(event)
             event = {'event': 'PlaybackPaused',
                      'data': {'paused': self.mainController.player.paused}}
-            self.write(json.dumps(event) + '\n')
+            self.writeJsonLine(event)
 
         # push playlist data
         playlistData = [track.meta
@@ -340,12 +344,12 @@ class InfoStream(BaseStream):
                           'position': playlist.currentPosition,
                           'hasUndo': playlist.hasUndo,
                           'hasRedo': playlist.hasRedo}}
-        self.write(json.dumps(event) + '\n')
+        self.writeJsonLine(event)
 
         # push list of playlists
         event = {'event': 'PlaylistRegistryUpdated',
                  'data': {'list': playlistRegistry.list_()}}
-        self.write(json.dumps(event) + '\n')
+        self.writeJsonLine(event)
 
     def onConnectionLost(self, reason):
         self.mainController.infoListenerRegistry.remove(self)

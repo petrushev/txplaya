@@ -11,7 +11,7 @@ from txplaya.routes import url_map
 
 _match = url_map.bind('').match
 
-_NOT_FOUND_MSG = json.dumps({'msg': 'Not found!'})
+_NOT_FOUND_MSG = json.dumps({'msg': 'Not found!'}).encode('utf-8')
 
 def getFrontHandler():
 
@@ -26,7 +26,7 @@ def getFrontHandler():
                 controllerClass, kwargs = _match(self.path, method = self.method)
 
             except NotFound:
-                self.setHeader('Content-Type', 'text/html')
+                self.setHeader('Content-Type', 'application/json')
                 self.setResponseCode(NOT_FOUND)
                 self.write(_NOT_FOUND_MSG)
                 self.finish()

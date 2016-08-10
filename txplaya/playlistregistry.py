@@ -2,8 +2,8 @@ from os.path import dirname
 from os.path import join as path_join
 from os import environ
 from zlib import compress, decompress
-import json
 from base64 import b64encode, b64decode
+import pickle
 
 if 'TXPLAYA_PLAYLISTS' in environ:
     PATH = environ['TXPLAYA_PLAYLISTS']
@@ -26,10 +26,10 @@ class PlaylistRegistry(object):
         with open(BINPATH, 'rb') as f:
             content = f.read()
 
-        self._reg = json.loads(decompress(content))
+        self._reg = pickle.loads(decompress(content))
 
     def save(self):
-        content = json.dumps(self._reg)
+        content = pickle.dumps(self._reg, 1)
         content = compress(content)
 
         with open(BINPATH, 'wb') as f:

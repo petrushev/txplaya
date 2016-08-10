@@ -386,9 +386,9 @@ class MainController(object):
         playlistRegistry.savePlaylist('__current__', paths)
 
     def announce(self, data):
-        buf = json.dumps(data) + '\n'
+        buf = (json.dumps(data) + '\n').encode('utf-8')
         for listener in self.infoListenerRegistry.iterListeners():
-            _d = deferLater(reactor, 0, listener.onPush, buf)
+            deferLater(reactor, 0, listener.onPush, buf)
 
     def onTrackFinished(self):
         if self.scrobbler is not None:

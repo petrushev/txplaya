@@ -2,8 +2,8 @@ from os.path import dirname, abspath
 from os.path import join as path_join
 from os import environ, walk, pathsep, stat
 from zlib import compress, decompress
-import json
 from base64 import urlsafe_b64encode, urlsafe_b64decode
+import pickle
 
 from txplaya.track import Track
 
@@ -30,7 +30,7 @@ class Library(object):
 
     def readBin(self):
         with open(BINPATH, 'rb') as f:
-            self._lib = json.loads(decompress(f.read()))
+            self._lib = pickle.loads(decompress(f.read()))
 
     @classmethod
     def encodePath(cls, path):
@@ -72,7 +72,7 @@ class Library(object):
 
     def saveBin(self):
         with open(BINPATH, 'wb') as f:
-            f.write(compress(json.dumps(self._lib)))
+            f.write(compress(pickle.dumps(self._lib, 1)))
 
     def pathExists(self, filepath):
         filepath = abspath(filepath)
