@@ -1,7 +1,8 @@
 import json
 
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QModelIndex
-from PyQt5.QtWidgets import QWidget, QSpacerItem, QSizePolicy
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QModelIndex, Qt
+from PyQt5.QtWidgets import QWidget, QSpacerItem, QSizePolicy, QShortcut
+from PyQt5.QtGui import QKeySequence
 
 from txplayagui.ui.library import Ui_LibraryWidget
 from txplayagui.library import LibraryModel
@@ -29,6 +30,17 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
 
         self.querySearchBox.textChanged.connect(self.onQueryChanged)
         self.clearSearchButton.clicked.connect(self.onQueryClear)
+
+        # shortcuts
+        releaseSearchboxShortcut = QShortcut(QKeySequence('Esc'), self.querySearchBox)
+        releaseSearchboxShortcut.setContext(Qt.WidgetShortcut)
+        releaseSearchboxShortcut.activated.connect(self.onReleaseSearchbox)
+        scrollLibraryShortcut = QShortcut(QKeySequence(Qt.Key_Down), self.querySearchBox)
+        scrollLibraryShortcut.setContext(Qt.WidgetShortcut)
+        scrollLibraryShortcut.activated.connect(self.onScrollLibrary)
+        activateTracksShortcut = QShortcut(QKeySequence(Qt.Key_Return), self.treeView)
+        activateTracksShortcut.setContext(Qt.WidgetShortcut)
+        activateTracksShortcut.activated.connect(self.onActivateTracks)
 
     @pyqtSlot()
     def rescanClicked(self):
@@ -61,14 +73,8 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
 
     @pyqtSlot(QModelIndex)
     def onTreeViewDoubleClicked(self, index):
-        mimeData = unwrapMime(self.libraryModel.mimeData([index]))
-        item = mimeData['items'][0]
-        if 'hash' in item:
-            hashes = [item['hash']]
-        elif 'album' in item:
-            hashes = self.libraryModel.albumHashes(index)
-        else:
-            # artist clicked
+        hashes = self._getHashes(index)
+        if len(hashes) == 0:
             return
 
         self.itemsActivated.emit(hashes)
@@ -84,6 +90,36 @@ class LibraryWidget(Ui_LibraryWidget, QWidget):
     def onQueryClear(self):
         self.querySearchBox.setText('')
         self.querySearchBox.setFocus()
+
+    def onReleaseSearchbox(self):
+        self.setFocus()
+
+    def onScrollLibrary(self):
+        self.treeView.setCurrentIndex(self.libraryModel.headIndex())
+        self.treeView.setFocus()
+
+    def onActivateTracks(self):
+        collectedHashes = []
+
+        for index in self.treeView.selectedIndexes():
+            for hash_ in self._getHashes(index):
+                if hash_ not in collectedHashes:
+                    collectedHashes.append(hash_)
+
+        if len(collectedHashes) == 0:
+            return
+
+        self.itemsActivated.emit(collectedHashes)
+
+    def _getHashes(self, index):
+        mimeData = unwrapMime(self.libraryModel.mimeData([index]))
+        item = mimeData['items'][0]
+        try:
+            return [item['hash']]
+        except KeyError:
+            if 'album' in item:
+                return self.libraryModel.albumHashes(index)
+        return []
 
     def setProgress(self, value):
         self.scanProgressBar.setValue(value)

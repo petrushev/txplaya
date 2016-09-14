@@ -228,6 +228,9 @@ class LibraryModel(QAbstractItemModel):
 
         return self.createIndex(row, column, item)
 
+    def headIndex(self):
+        return self.index(0, 0, self._rootIndex)
+
     def getArtist(self, artist):
         albumartistkey = ArtistItem.getKey(artist)
 

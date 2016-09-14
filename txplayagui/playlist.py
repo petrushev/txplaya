@@ -2,7 +2,7 @@ from math import floor, ceil
 
 from werkzeug.utils import cached_property
 
-from PyQt5.QtWidgets import QMenu, QInputDialog, QWidget
+from PyQt5.QtWidgets import QMenu, QWidget
 from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QColor
 
@@ -149,7 +149,7 @@ class PlaylistMenu(QMenu):
     play = pyqtSignal(QModelIndex)
     remove = pyqtSignal(QModelIndex)
     clear = pyqtSignal()
-    save = pyqtSignal(unicode)
+    save = pyqtSignal()
     reconnect = pyqtSignal()
     undo = pyqtSignal()
     redo = pyqtSignal()
@@ -202,9 +202,7 @@ class PlaylistMenu(QMenu):
 
     @pyqtSlot()
     def _onSave(self):
-        playlistName, accepted = QInputDialog.getText(self, 'Save playlist', 'Playlist name:')
-        if accepted:
-            self.save.emit(playlistName)
+        self.save.emit()
 
     @pyqtSlot()
     def _onUndo(self):

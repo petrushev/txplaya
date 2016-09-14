@@ -1,6 +1,8 @@
 import json
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QSystemTrayIcon, QMenu
+from PyQt5.QtWidgets import QMainWindow, QWidget, QSystemTrayIcon, QMenu, QShortcut,\
+    QInputDialog
+from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import QLocale, QTranslator, pyqtSlot, QModelIndex, QPoint, QTimer, Qt, \
     QSettings
 
@@ -85,6 +87,24 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         self.quit.triggered.connect(self.quitEvent)
         self.quitButton.clicked.connect(self.quitEvent)
         self.quitFlag = False
+
+        # keyboard shortcuts
+        focusLibraryShortcut = QShortcut(QKeySequence('Ctrl+F'), self)
+        focusLibraryShortcut.activated.connect(self.onFocusLibrary)
+        deleteTrackShortcut = QShortcut(QKeySequence('Del'), self.playlistTable)
+        deleteTrackShortcut.setContext(Qt.WidgetShortcut)
+        deleteTrackShortcut.activated.connect(self.onDeleteTrack)
+        togglePlaybackShortcut = QShortcut(QKeySequence('Space'), self)
+        togglePlaybackShortcut.activated.connect(self.onTogglePlayback)
+        startShortcut = QShortcut(QKeySequence(Qt.Key_Return), self.playlistTable)
+        startShortcut.setContext(Qt.WidgetShortcut)
+        startShortcut.activated.connect(self.onPlaySelected)
+        undoShortcut = QShortcut(QKeySequence('Ctrl+Z'), self)
+        undoShortcut.activated.connect(self.onPlaylistUndo)
+        redoShortcut = QShortcut(QKeySequence('Ctrl+Shift+Z'), self)
+        redoShortcut.activated.connect(self.onPlaylistRedo)
+        saveShortcut = QShortcut(QKeySequence('Ctrl+S'), self)
+        saveShortcut.activated.connect(self.onPlaylistSave)
 
         self.infoStreamStart()
         QTimer.singleShot(200, self.fetchLibrary)
@@ -297,10 +317,13 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         from txplayagui.client import loadPlaylist
         _ = loadPlaylist(playlistName)
 
-    @pyqtSlot(unicode)
-    def onPlaylistSave(self, playlistName):
+    @pyqtSlot()
+    def onPlaylistSave(self):
         from txplayagui.client import savePlaylist
-        _ = savePlaylist(playlistName)
+
+        playlistName, accepted = QInputDialog.getText(self, 'Save playlist', 'Playlist name:')
+        if accepted:
+            _ = savePlaylist(playlistName)
 
     @pyqtSlot()
     def reconnectDialog(self):
@@ -311,42 +334,21 @@ class MainWindow(Ui_MainWindow, QMainWindow):
         else:
             self.quitEvent()
 
-    def keyReleaseEvent(self, event):
-        from txplayagui.client import remove, deletePlaylist
+    def onFocusLibrary(self):
+        self.library.querySearchBox.setFocus()
+        self.library.querySearchBox.selectAll()
 
-        result = QMainWindow.keyReleaseEvent(self, event)
-        focusWidget = QApplication.focusWidget()
+    def onDeleteTrack(self):
+        from txplayagui.client import remove
+        selectedIndexes = self.playlistTable.selectedIndexes()
+        if len(selectedIndexes) > 0:
+            _ = remove(selectedIndexes[0].row())
 
-        if event.modifiers() == Qt.ControlModifier and event.key() == 70:
-            # Ctrl + F, focus searh in library
-            self.library.querySearchBox.setFocus()
-            self.library.querySearchBox.selectAll()
-
-        elif event.modifiers() == Qt.NoModifier and event.key() == 32:
-            # Space, toggle playback
-            if focusWidget != self.library.querySearchBox:
-                if self.playback.pauseButton.isVisible():
-                    self.playback.onPauseClicked()
-                else:
-                    self.onPlaySelected()
-
-        elif event.modifiers() == Qt.NoModifier and event.key() == 16777223:
-            # Del key
-
-            if focusWidget == self.playlistTable:
-                # delete item in playlist
-                selectedIndexes = self.playlistTable.selectedIndexes()
-                if len(selectedIndexes) > 0:
-                    _ = remove(selectedIndexes[0].row())
-
-            elif focusWidget == self.playlists.view:
-                # delete playlist from registry
-                selectedIndexes = self.playlists.view.selectedIndexes()
-                if len(selectedIndexes) > 0:
-                    playlistName = selectedIndexes[0].data()
-                    _ = deletePlaylist(playlistName)
-
-        return result
+    def onTogglePlayback(self):
+        if self.playback.pauseButton.isVisible():
+            self.playback.onPauseClicked()
+        else:
+            self.onPlaySelected()
 
     def systemTrayToggle(self, reason):
         if self.isVisible():
