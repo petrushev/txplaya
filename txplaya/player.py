@@ -59,17 +59,28 @@ class Player(object):
         self._garbageCollect()
 
     def _garbageCollect(self):
-        _d = deferLater(reactor, 1000, self._garbageCollect)
-        bytes_ = gc.collect()
-        log.msg('Garbage collected %d' % bytes_)
+        _bytes = gc.collect()
+        if _bytes == 0:
+            interval = 3000
+        else:
+            interval = 1000
+        _d = deferLater(reactor, interval, self._garbageCollect)
+
+        #log.msg('Garbage collected %d' % bytes_)
 
     def feed(self, track, clear=False):
-        chunks = track.dataChunks(ITER_TIME)
-        self.currentSize = sum(map(len, chunks))
-
         if clear:
             self.data.clear()
-        self.data.extend(chunks)
+
+        try:
+            chunks = track.dataChunks(ITER_TIME)
+        except IOError:
+            log.err('{0} can not be read'.format(repr(track)))
+            #self.onTrackFinished()
+            raise
+        else:
+            self.currentSize = sum(map(len, chunks))
+            self.data.extend(chunks)
 
     def play(self):
         if not self.playing or self.paused:
@@ -173,6 +184,12 @@ class Playlist(object):
     def iterTrack(self):
         for trackUid in self.iterTrackUid():
             yield self._reg[trackUid]
+
+    @property
+    def playlistData(self):
+        data = (track.meta for track in self.iterTrack())
+        data = [meta for meta in data if meta is not None]
+        return data
 
     @property
     def _paths(self):
@@ -394,22 +411,39 @@ class MainController(object):
         if self.scrobbler is not None:
             deferLater(reactor, 0, self.scrobbler.scrobble, self.playlist.currentTrack)
 
-        nextPosition = self.playlist.stepNext()
-
-        if nextPosition is None:
+        if self.playlist.stepNext() is None:
             self.onPlaylistFinished()
             return
 
-        self.onPlaybackStarted()
+        while True:
+            try:
+                self.player.feed(self.playlist.currentTrack, clear=False)
+            except IOError:
+                # next track not found on disk
+                currentPosition = self.playlist.currentPosition
+                self.playlist.remove(currentPosition, emit=False)
 
-        self.player.feed(self.playlist.currentTrack, clear=False)
-        self.player.start()
+                if currentPosition >= len(self.playlist._reg):
+                    # no more tracks
+                    self.onPlaylistFinished()
+                    break
+                else:
+                    # try next
+                    self.playlist.start(currentPosition)
+            else:
+                # track loaded successfuly
+                self.player.start()
+                self.onPlaybackStarted()
+                break
 
     def onPlaybackStarted(self):
         track = self.playlist.currentTrack
 
         if self.scrobbler is not None:
             deferLater(reactor, 0, self.scrobbler.updateNowPlaying, track)
+
+        if track.meta is None:
+            return
 
         event = {'event': 'TrackStarted',
                  'data': {'position': self.playlist.currentPosition,
@@ -443,10 +477,8 @@ class MainController(object):
 
     def onPlaylistChange(self):
         playlist = self.playlist
-        playlistData = [track.meta
-                        for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
-                 'data': {'playlist': playlistData,
+                 'data': {'playlist': playlist.playlistData,
                           'hasUndo': playlist.hasUndo,
                           'hasRedo': playlist.hasRedo,
                           'position': playlist.currentPosition}}

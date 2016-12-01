@@ -80,8 +80,7 @@ class PlaylistManager(BaseController):
 
     @property
     def playlistData(self):
-        return [track.meta
-                for track in self.mainController.playlist.iterTrack()]
+        return self.mainController.playlist.playlistData
 
     def getData(self):
         return {'playlist': self.playlistData,
@@ -199,11 +198,17 @@ class Player(BaseController):
             return {'err': repr(err)}
 
         player = self.mainController.player
+        playlist = self.mainController.playlist
 
-        player.feed(self.mainController.playlist.currentTrack, clear=True)
-        player.start()
-
-        return {'msg': 'Started'}
+        try:
+            player.feed(playlist.currentTrack, clear=True)
+        except IOError:
+            currentPosition = playlist.currentPosition
+            playlist.remove(playlist.currentPosition, emit=False)
+            self._start(currentPosition)
+        else:
+            player.start()
+            return {'msg': 'Started'}
 
     def next(self):
         position = self.mainController.playlist.currentPosition
@@ -328,19 +333,20 @@ class InfoStream(BaseStream):
             self.writeJsonLine(event)
 
         else:
+            meta = playlist.currentTrack.meta
+            if meta is None:
+                return
             event = {'event': 'TrackStarted',
                      'data': {'position': playlist.currentPosition,
-                              'track': playlist.currentTrack.meta}}
+                              'track': meta}}
             self.writeJsonLine(event)
             event = {'event': 'PlaybackPaused',
                      'data': {'paused': self.mainController.player.paused}}
             self.writeJsonLine(event)
 
         # push playlist data
-        playlistData = [track.meta
-                        for track in playlist.iterTrack()]
         event = {'event': 'PlaylistChanged',
-                 'data': {'playlist': playlistData,
+                 'data': {'playlist': playlist.playlistData,
                           'position': playlist.currentPosition,
                           'hasUndo': playlist.hasUndo,
                           'hasRedo': playlist.hasRedo}}

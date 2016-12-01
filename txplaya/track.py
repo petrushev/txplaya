@@ -66,23 +66,28 @@ class Track(object):
 
     def __init__(self, path):
         self._path = path
-        self._meta = {'artist': '', 'length': ''}
-        self._parseTags()
+        self._meta = self._parseTags()
 
     def _parseTags(self):
+        _meta = {'artist': '', 'length': self.length}
+
         try:
             id3 = ID3(self._path)
         except Exception:
             try:
                 mp4 = MP4(self._path)
             except Exception:
-                pass
+                return None
             else:
-                self._meta.update(_parseMp4(mp4.tags))
+                _meta.update(_parseMp4(mp4.tags))
         else:
-            self._meta.update(_parseId3(id3))
+            _meta.update(_parseId3(id3))
 
-        self._meta['length'] = self.length
+        return _meta
+
+    @property
+    def path(self):
+        return self._path
 
     @property
     def data(self):
@@ -91,6 +96,8 @@ class Track(object):
         return data
 
     def dataChunks(self, iterTime):
+        rawData = self.data
+
         type_ = self.meta.get('type')
         if type_ == 'mp3':
             prebufTime = 0.3
@@ -98,8 +105,6 @@ class Track(object):
             prebufTime = 70.0
         else:
             return []
-
-        rawData = self.data
 
         prebufSize = len(rawData) * prebufTime / self.length
         prebufSize = int(ceil(prebufSize))
@@ -136,6 +141,8 @@ class Track(object):
 
     @cached_property
     def has_tags(self):
+        if self.meta is None:
+            return False
         meta = dict(self.meta)
         del meta['length']
         return set(meta.values()) != set([''])

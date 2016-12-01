@@ -4,6 +4,7 @@ from datetime import datetime
 import pylast
 
 from twisted.internet.threads import deferToThread
+from twisted.python import log
 
 
 USER = environ.get('TXPLAYA_LASTFM_USER')
@@ -37,7 +38,8 @@ class Scrobbler(object):
         pass
 
     def onNetworkError(self, failure):
-        failure.printTraceback()
+        traceback = failure.getBriefTraceback()
+        log.err(traceback)
 
     def deferToThread(self, func, *args, **kwargs):
         d = deferToThread(func, *args, **kwargs)
@@ -47,6 +49,9 @@ class Scrobbler(object):
 
     def _parseTrackData(self, track):
         if track is None:
+            return None
+
+        if track.meta is None:
             return None
 
         artist = track.artist

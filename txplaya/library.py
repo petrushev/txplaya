@@ -68,7 +68,9 @@ class Library(object):
                 continue
 
             trackId = Library.encodePath(path_)
-            self._lib[trackId] = track.meta
+            meta = track.meta
+            if meta is not None:
+                self._lib[trackId] = meta
 
     def saveBin(self):
         with open(BINPATH, 'wb') as f:
