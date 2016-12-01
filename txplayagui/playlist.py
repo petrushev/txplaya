@@ -101,8 +101,14 @@ class PlaylistModel(QAbstractTableModel):
 
     def updateAll(self, playlistData):
         self.beginResetModel()
-        self._tracks = [Track.fromData(trackData)
-                        for trackData in playlistData]
+        self._tracks = []
+        for trackData in playlistData:
+            try:
+                track = Track.fromData(trackData)
+            except KeyError:
+                pass
+            else:
+                self._tracks.append(track)
         self.endResetModel()
 
     def mimeData(self, indexes):

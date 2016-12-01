@@ -13,7 +13,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/library.ui" line="72"/>
+        <location filename="../ui/library.ui" line="81"/>
         <source>Rescan</source>
         <translation type="unfinished"></translation>
     </message>
@@ -26,23 +26,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="244"/>
+        <location filename="../ui/main.ui" line="129"/>
         <source>Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="273"/>
+        <location filename="../ui/main.ui" line="158"/>
         <source>Playlists</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="331"/>
-        <source>&amp;Play</source>
+        <location filename="../ui/main.ui" line="255"/>
+        <source>Restore</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/main.ui" line="340"/>
-        <source>&amp;Remove</source>
+        <location filename="../ui/main.ui" line="264"/>
+        <source>Quit</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PlaybackWidget</name>
+    <message>
+        <location filename="../ui/playback.ui" line="14"/>
+        <source>Form</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

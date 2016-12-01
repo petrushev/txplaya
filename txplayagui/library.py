@@ -62,13 +62,18 @@ class ArtistItem(LibraryItem):
         self.model = None
 
     def getAlbum(self, album):
-        if album in self._children:
-            albumItem = self._children[album]
-        else:
-            albumItem = AlbumItem(album)
-            albumItem._parent = self
-            self._children[album] = albumItem
+        year, albumName = album
+        albumNameLower = albumName.lower()
 
+        for albumKey, albumItem in self._children.iteritems():
+            _year, _albumName = albumKey
+            if _year == year and albumNameLower == _albumName.lower():
+                return albumItem
+
+        # not found
+        albumItem = AlbumItem(album)
+        albumItem._parent = self
+        self._children[album] = albumItem
         return albumItem
 
     def removeAlbum(self, album):
